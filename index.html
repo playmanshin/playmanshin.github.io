@@ -1128,7 +1128,8 @@ let lineupReturn=null;           // 신단 정비 후 돌아갈 곳
 let dmgTurnAcc=0, dmgLastTurn=0;
 
 function memberOf(sp){return party.find(p=>p.sp===sp);}
-function isUp(inst){if(!inst.owner)return false;const m=memberOf(inst.owner);return !!m&&m.lv>=2;}
+// 강화 판정: 신령 카드는 치성(lv2), 무소속 무구는 인스턴스 up 플래그 (저장에 그대로 직렬화됨)
+function isUp(inst){if(inst.up)return true;if(!inst.owner)return false;const m=memberOf(inst.owner);return !!m&&m.lv>=2;}
 function cardVals(inst){
   const d=CARDS[inst.id], v=Object.assign({cost:d.cost},d.v);
   if(isUp(inst))Object.assign(v,d.u||{});
@@ -3856,7 +3857,7 @@ function rsEndCombat(win){
 function rsFinal(){
   if(!runStats)return;
   runStats.final={hp:teamHP,maxHP:teamMax,deckSize:deck.length,
-    upgradedCards:deck.filter(c=>c.owner&&(memberOf(c.owner)||{}).lv>=2).length,
+    upgradedCards:deck.filter(c=>isUp(c)).length,
     relicCount:relics.length,activeSpirits:activeMembers().map(m=>m.sp),boons:boons.slice()};
 }
 function rsPath(t){if(runStats)runStats.paths[t]=(runStats.paths[t]||0)+1;}
