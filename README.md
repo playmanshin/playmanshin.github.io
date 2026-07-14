@@ -10,7 +10,7 @@
   <img src="docs/screenshot-battle.png" width="270" alt="전투 — 무당 vs 처녀귀신">
 </p>
 
-- 🎮 **플레이**: `index.html`을 브라우저로 열기 (서버 불필요) 또는 [claude.ai 아티팩트](https://claude.ai/code/artifact/138e2e4e-5c59-4e68-aec6-10c770f8bac4) (claude.ai 로그인이 필요할 수 있음)
+- 🎮 **플레이 (공식)**: **https://playmanshin.github.io** — 또는 `index.html`을 브라우저로 직접 열기 (서버 불필요)
 - 📜 **기획서**: [docs/GDD.md](docs/GDD.md) (현행 설계) · [docs/CHANGELOG.md](docs/CHANGELOG.md) (설계 변경 이력·논거)
 - ✅ **회귀 테스트**: `cd tests && ./run.sh` — `ALL_GREEN`이면 통과 (Node 18+ · bash/sed 필요, Windows는 WSL/Git Bash)
 
@@ -45,4 +45,4 @@
 
 ## 라이선스
 
-© 2026 audwls624. All rights reserved — 라이선스 미정 (공개 배포 형태 확정 시 결정).
+© 2026 playmanshin (audwls624). All rights reserved — 라이선스 미정 (공개 배포 형태 확정 시 결정).

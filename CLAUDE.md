@@ -4,7 +4,7 @@
 
 ## Claude 전용 규칙
 
-1. **아티팩트 배포 시 기존 URL 유지**: `url: "https://claude.ai/code/artifact/138e2e4e-5c59-4e68-aec6-10c770f8bac4"` 를 반드시 전달한다 (누락 시 새 URL이 발급됨). 배포 전 `tests/run.sh` ALL_GREEN 필수.
+1. **공식 플레이 URL은 GitHub Pages**: https://playmanshin.github.io — `main` 푸시가 곧 배포다. 아티팩트는 개발 중 미리보기용 보조 채널로 유지하며, 배포 시 기존 URL을 재사용한다: `url: "https://claude.ai/code/artifact/138e2e4e-5c59-4e68-aec6-10c770f8bac4"` (누락 시 새 URL 발급됨). 어느 쪽이든 배포 전 `tests/run.sh` ALL_GREEN 필수.
 2. 배포 라벨·커밋의 빌드 버전(v10.x)과 설계 버전(v0.x)은 별개 — 체계는 `docs/CHANGELOG.md` 첫머리 참조.
 
 ## index.html 내부 구조 (코드 탐색 지도, 위→아래 순서)
