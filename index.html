@@ -2804,8 +2804,11 @@ function learnNow(id,msg){
   if(msg)toast(msg,true);
   return true;
 }
-// 기학습자 소급(규칙 ③): 이긴 적이 있거나 진행 중 런이 있으면 전부 공개 — 업데이트로 기존 플레이어의 치성 등이 사라져 보이는 회귀 방지
+// 기학습자 소급(규칙 ③): 1회성 마이그레이션 — 이 업데이트 "이전부터" 놀던 플레이어(승리 이력·진행 런)만 전부 공개.
+// 매 로드 실행이면 신규 플레이어도 새 굿 저장 후 리로드 한 번에 시퀀서가 영구 무력화된다 (적대 검증) — 마커로 최초 1회만
 function seedLearnsForVeterans(){
+  if(localStorage.getItem('ms_learn_seeded'))return;
+  localStorage.setItem('ms_learn_seeded','1');
   if(+(localStorage.getItem('ms_wins')||0)>0||localStorage.getItem('ms_run'))
     ['chiseong','donghaeng','hap','meta'].forEach(id=>{localStorage.setItem('ms_learn_'+id,'1');learnCache[id]=true;});
 }
@@ -3229,7 +3232,10 @@ async function castGut(){
   screenFlash('invert',0.12);
   showGutBanner(g.name,SPIRITS[channeled].col);
   spawnRibbons(); gutFxT=1.1;
-  if(gd.note)setTimeout(()=>toast('⚭ '+gd.note,true),600);
+  if(gd.note){   // 굿거리 듀엣·성숙의 첫 발동 = 합 학습 (제3의 트리거 — 효과가 설명 없이 반복되지 않게, 적대 검증)
+    learnNow('hap');
+    setTimeout(()=>toast('⚭ '+gd.note,true),600);
+  }
   await sleep(520);
   const f=gd.fx;
   if(f.revive){player.revive=true;float2(SHAMAN_POS[0],SHAMAN_POS[1]-80,'초혼 — 명줄을 붙들었다','#c99b3f');}
@@ -4200,7 +4206,7 @@ function showDraft(){
   const elite=!!(enemy&&enemy.elite);
   const moonFull=rareLuck>=0.30;                        // pity 상태의 서사 고지 — 롤 전 값 기준
   const roll=rollDraft(elite);
-  $('draftSub').textContent=(elite?'정예의 유품 — 깊이 잠든 무구(★)가 반드시 섞여 있다.':'굿판에 떨어진 무구 중 하나를 줍는다.')
+  $('draftSub').textContent=(elite?(hasLearn('meta')?'정예의 유품 — 깊이 잠든 무구(★)가 반드시 섞여 있다.':'정예의 유품 — 예사롭지 않은 무구가 섞여 있다.'):'굿판에 떨어진 무구 중 하나를 줍는다.')
     +(moonFull&&!elite&&hasLearn('meta')?' 달이 만월에 가깝다 — 깊이 잠든 무구가 몸을 뒤척인다.':'');
   const rec=runStats?{act,shown:roll.cards.slice(),rare:roll.rareShown,syn:roll.cards.filter(id=>axOverlap(id)>0).length,pick:null}:null;
   if(rec)((runStats.drafts=runStats.drafts||[])).push(rec);

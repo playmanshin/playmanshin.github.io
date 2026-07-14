@@ -70,12 +70,41 @@ const test=`
     showTitle();
     assert.equal(diffMode,'bongut','타이틀 복귀 시 원 난이도 복원');
     console.log('[안내런] 이야기 적용·비영구·복원 OK');
-    // ---- 6) 기학습자 소급 (규칙 ③) — 승리 이력자는 전부 공개 ----
+    // ---- 6) 기학습자 소급 (규칙 ③) — 1회성 마이그레이션 ----
     ['chiseong','donghaeng','hap','meta'].forEach(id=>{localStorage.removeItem('ms_learn_'+id);delete learnCache[id];});
     localStorage.setItem('ms_wins','1');
+    localStorage.removeItem('ms_learn_seeded');   // 업데이트 직후 최초 실행 재현
     seedLearnsForVeterans();
     ['chiseong','donghaeng','hap','meta'].forEach(id=>assert.equal(hasLearn(id),true,'소급: '+id));
-    console.log('[소급] 기존 플레이어 전부 공개 OK');
+    // 적대 검증 회귀: 마커가 있으면 재시딩 금지 — 신규 플레이어가 리로드로 시퀀서를 무력화할 수 없다
+    ['chiseong','donghaeng','hap','meta'].forEach(id=>{localStorage.removeItem('ms_learn_'+id);delete learnCache[id];});
+    localStorage.setItem('ms_wins','0');
+    localStorage.setItem('ms_run','{"fake":1}');   // 새 굿 저장 후 리로드 상황
+    seedLearnsForVeterans();
+    assert.equal(hasLearn('chiseong'),false,'마커 이후 리로드 — 재시딩 없음 (시퀀서 유지)');
+    localStorage.removeItem('ms_run');
+    console.log('[소급] 1회성 마이그레이션·리로드 무력화 차단 OK');
+    // ---- 6-1) 굿거리 듀엣 첫 발동 = 합 학습 (제3의 트리거) ----
+    party=[G('samsinhalmi'),G('gaekgwi')];
+    deck=[]; for(let i=0;i<8;i++)addCard('bujeok');
+    teamMax=80; teamHP=60;
+    genMap();
+    startBattle('jangseung'); await sleep(950);
+    enemy.hp=500; enemy.max=500;
+    assert.equal(hasLearn('hap'),false,'객귀 engine ≠ 삼신 heal — 합 미발동, 미학습');
+    setChannel('gaekgwi',true);
+    sinmyeong=5; gutCastTurn=false; busy=false;
+    await castGut();
+    assert.equal(hasLearn('hap'),true,'굿거리 듀엣(제삿밥) 첫 발동 = 학습');
+    inBattle=false; stopDrone();
+    console.log('[굿듀엣 학습] 발동=설명 인과 OK');
+    // ---- 6-2) 정예 드래프트 부제 — meta 학습 전 ★ 참조 금지 ----
+    localStorage.removeItem('ms_learn_meta'); delete learnCache['meta'];
+    enemy={sp:'dokkaebi',elite:true}; inBattle=false;
+    initRunStats();
+    showDraft();
+    assert.ok(!document.getElementById('draftSub').textContent.includes('★'),'학습 전 부제에 ★ 없음');
+    console.log('[드래프트 부제] 매달린 ★ 참조 제거 OK');
     // ---- 7) 소스 계약: 몸주신 3+3(전원 선택 가능)·怨/恨 표기·카드 확대 z (완료 조건 5·8) ----
     const html=require('fs').readFileSync(__dirname+'/../index.html','utf8');
     assert.ok(html.includes('다른 몸주신을 살펴본다'),'접힌 3위 진입로 존재');
