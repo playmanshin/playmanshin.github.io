@@ -45,7 +45,8 @@ const test=`
     startBattle('gaekgwi');
     await sleep(1000);
     enemy.hp=500;enemy.max=500;
-    console.log('[길잡이] 전투 시작 적 恨='+enemy.han+' (3 기대)');
+    console.log('[길잡이] 전투 시작 적 恨='+enemy.han+' (2 기대)');
+    assert.equal(enemy.han,2);   // v0.7.2: 길잡이 +3 → +2
     const ehp=enemy.hp;
     const a1={uid:9001,id:'bujeok',owner:null};hand.push(a1);energy=3;
     await playCard(a1,null);
@@ -58,9 +59,9 @@ const test=`
     assert.equal(ehp2-enemy.hp,8);
     const s0=player.str;
     const gc={uid:9003,id:'janggun2',owner:'janggun'};hand.push(gc);energy=3;
-    await playCard(gc,null);   // 군령 str2 + 사기1
+    await playCard(gc,null);   // v0.7.2: 군령 str1 + 사기1
     console.log('[사기] 힘 '+s0+'→'+player.str);
-    assert.equal(player.str,s0+3);
+    assert.equal(player.str,s0+2);
     // 저승길: 恨 절반
     boons.push('jeoseunggil');
     const hp0=teamHP; player.han=0;

@@ -680,7 +680,7 @@ const CARDS={
   dongti:{name:'동티',cost:99,curse:true,v:{}},
   // 몸주신
   janggun1:{name:'언월도',cost:1,v:{dmg:9},u:{dmg:12}},
-  janggun2:{name:'군령',cost:1,v:{str:2},u:{str:3}},
+  janggun2:{name:'군령',cost:1,v:{str:1},u:{str:2}},
   janggun3:{name:'진돌격',cost:2,v:{dmg:14,selfDmg:2},u:{dmg:19,selfDmg:2}},
   yong1:{name:'물벼락',cost:1,v:{dmg:7},u:{dmg:10}},
   yong2:{name:'비늘갑주',cost:1,v:{block:9},u:{block:12}},
@@ -937,7 +937,7 @@ const BOONS={
      {id:'bultoe',n:'불퇴(不退)',d:'체력 50% 이상이면 받는 공격 −2'}]
   ],
   bari:[
-    [{id:'giljabi',n:'길잡이',d:'전투 시작 시 적 恨 +3'},
+    [{id:'giljabi',n:'길잡이',d:'전투 시작 시 적 恨 +2'},
      {id:'myeongjul',n:'명줄',d:'최대체력 +8 (즉시)'}],
     [{id:'kkotgap',n:'꽃값',d:'회복이 넘치면 초과분만큼 적 恨 (최대 3)'},
      {id:'jeoseunggil',n:'저승길',d:'내가 받는 恨 피해 절반'}],
@@ -964,7 +964,7 @@ const BOONS={
   ],
   // 카드 순서와 첫 수를 보상한다
   chilseong:[
-    [{id:'saebyeok',n:'새벽별',d:'매 턴 첫 카드의 신력 −1'},
+    [{id:'saebyeok',n:'새벽별',d:'매 전투 첫 카드의 신력 −1'},
      {id:'bukdu',n:'북두(北斗)',d:'전투 시작 드로우 +2'}],
     [{id:'yuseong',n:'유성(流星)',d:'매 턴 첫 공격 카드 피해 +3'},
      {id:'byeoljari',n:'별자리',d:'턴마다 3장째 카드를 내면 드로우 1'}],
@@ -1140,7 +1140,7 @@ function effCost(inst){
   const v=cardVals(inst);
   let c=v.cost;
   if(c<90&&auraId()==='firstDiscount'&&!firstCardPlayed)c=Math.max(0,c-1);
-  if(c<90&&hasBoon('saebyeok')&&turnCardCount===0)c=Math.max(0,c-1);
+  if(c<90&&hasBoon('saebyeok')&&!battleFirstCardUsed)c=Math.max(0,c-1);   // 전투당 1회 — 신기 별점(매 턴)과 매 턴 −2로 겹치지 않게
   return c;
 }
 function cardDesc(v,curse,def){
@@ -3013,7 +3013,7 @@ async function playCard(inst,el){
   if(d.xcost&&energy<1){toast('바칠 신력이 없다');snd.tap();return;}
   if(c>energy){toast('신력(神力)이 부족하다!');snd.tap();return;}
   const xVal=d.xcost?energy:0;
-  busy=true; energy-=c; firstCardPlayed=true; cardsPlayed++; turnCardCount++;
+  busy=true; energy-=c; firstCardPlayed=true; cardsPlayed++; turnCardCount++; battleFirstCardUsed=true;
   if(hasBoon('byeolgapju'))player.block+=1;
   if(hasBoon('byeoljari')&&turnCardCount===3){drawCards(1);float2(SHAMAN_POS[0],SHAMAN_POS[1]-96,'별자리 — 드로우 1','#c99b3f');}
   snd.cast(d.fx||(v.dmg||v.xDmg||v.comboDmg||v.dmgPerSpirit?'slash':v.block||v.xBlock?'ward':v.heal||v.cleanse?'heal':v.dot?'hanMist':v.mark?'seal':null));
@@ -3336,7 +3336,7 @@ function startBattle(sp,opts){
   player={block:0,str:0,weak:0,han:0,nextAtk:0,revive:false,nineUsed:false,turnAtk:false};
   energy=3+(hasRelic('jipsin')?1:0);
   carryE=0; channeled=null; firstCardPlayed=false; dmgTurnAcc=0; sinmyeong=0; gutCastTurn=false;
-  powers=[]; cardsPlayed=0; enemy.mark=0; turnCardCount=0; sagiTurnUsed=false; battleHealAcc=0;
+  powers=[]; cardsPlayed=0; enemy.mark=0; turnCardCount=0; sagiTurnUsed=false; battleHealAcc=0; battleFirstCardUsed=false;
   channelFreeLeft=hasRelic('brassbell')?1:0;
   firstAtkBonusLeft=hasRelic('oldknife')?1:0;
   deck.forEach(x=>{if(x.ramp)x.ramp=0;});   // 담금질은 전투 안에서만
@@ -3359,7 +3359,7 @@ function startBattle(sp,opts){
   }
   boonFirstAtkLeft=hasBoon('seonbong')?1:0;
   if(hasBoon('gunjin'))player.block+=6;
-  if(hasBoon('giljabi'))gainHan(3);
+  if(hasBoon('giljabi'))gainHan(2);
   if(hasBoon('heonhwa'))healPlayer(6);
   if(hasBoon('gipeunso'))player.block+=6;
   if(hasBoon('bawideung'))player.block+=5;
@@ -3835,7 +3835,7 @@ function genMap(){
 const NODE_META={battle:['鬼','원귀'],elite:['凶','흉귀'],event:['緣','기연'],rest:['木','당산목'],shop:['市','장터'],boss:['門','문지기']};
 // ---------- 런 계측 (로컬 전용 — 외부 전송 없음) ----------
 let runStats=null, rsBattleTurns=0, rsCombat=null;
-let turnCardCount=0, sagiTurnUsed=false, battleHealAcc=0;   // 턴/전투 단위 강화 상태
+let turnCardCount=0, sagiTurnUsed=false, battleHealAcc=0, battleFirstCardUsed=false;   // 턴/전투 단위 강화 상태
 function initRunStats(){
   runStats={v:2,diff:diffMode,bodyGod:party[0]?party[0].sp:null,ts:Date.now(),
     acts:{0:{startHP:teamHP,startMax:teamMax}},dmgTaken:0,outHeal:0,battles:0,turns:0,paths:{},

@@ -72,12 +72,15 @@ const test=`
     await playCard(hand[0]);
     assert.equal(player.nextAtk,1,'용틀임 공수 +1');
     console.log('[용틀임] OK');
-    // 6) 새벽별: 매 턴 첫 카드 신력 −1
-    boons=['saebyeok']; turnCardCount=0; channeled=null; firstCardPlayed=true;
-    assert.equal(effCost({uid:1,id:'janggun3',owner:null}),1,'2코스트가 첫 카드엔 1');
-    turnCardCount=1;
-    assert.equal(effCost({uid:1,id:'janggun3',owner:null}),2,'둘째 카드부터 정가');
-    console.log('[새벽별] OK');
+    // 6) 새벽별: 매 전투 첫 카드만 −1 (신기 별점의 매 턴 −1과 매 턴 −2로 겹치지 않는다)
+    boons=['saebyeok']; channeled=null; firstCardPlayed=true;
+    battleFirstCardUsed=false;
+    assert.equal(effCost({uid:1,id:'janggun3',owner:null}),1,'전투 첫 카드 −1');
+    battleFirstCardUsed=true;
+    assert.equal(effCost({uid:1,id:'janggun3',owner:null}),2,'이후 정가');
+    channeled='chilseong'; firstCardPlayed=false; battleFirstCardUsed=true;
+    assert.equal(effCost({uid:1,id:'janggun3',owner:null}),1,'별점(매 턴)만 단독 적용 — 중첩 없음');
+    console.log('[새벽별] 전투당 1회·중첩 제거 OK');
     // 7) 유성: 매 턴 첫 공격 카드 +3 (피해 검증)
     boons=['yuseong']; player.str=0; player.nextAtk=0; player.weak=0; player.turnAtk=false;
     enemy.hp=200; enemy.block=0; enemy.armor=0; enemy.field=null; enemy.thorns=0; enemy.mark=0;
