@@ -2464,6 +2464,20 @@ const ART={
       blk(g,'rgba(240,180,200,'+(0.5-((t*7+i*23)%40)/95)+')',px,py,3,2);
     }
   }
+,
+  // 복이 — 귀신을 보는 아이 (P4A NPC 초상). 작은 키 + 붉은 댕기 강조 1곳, 나머지 무채 (AGENTS 아트 규칙)
+  boki:(g,t)=>{
+    const b=Math.round(Math.sin(t*2.2));               // 숨쉬기 1px
+    blk(g,'#cfc4b2',-11,-18+b,3,8); blk(g,'#cfc4b2',8,-18+b,3,8);   // 팔
+    blk(g,'#8a8496',-9,-9,18,7);                       // 치마
+    blk(g,'#cfc4b2',-8,-20+b,16,12);                   // 저고리
+    blk(g,'#5a5464',-7,-2,5,2); blk(g,'#5a5464',2,-2,5,2);          // 발
+    blk(g,'#2c2830',-7,-31+b,14,10);                   // 머리
+    blk(g,'#1c1a22',-8,-33+b,16,4);                    // 앞머리
+    blk(g,'#c0453c',6,-27+b,3,9);                      // 붉은 댕기 (강조색)
+    blk(g,'#e8ddd0',-5,-28+b,10,7);                    // 얼굴
+    blk(g,'#241f28',-3,-26+b,2,2); blk(g,'#241f28',2,-26+b,2,2);    // 귀신을 보는 큰 눈
+  }
 };
 
 function drawSpirit(g,sp,t,scale,flip){
@@ -3924,6 +3938,11 @@ function startBattle(sp,opts){
     pi:0,elite:!!opts.elite,boss:!!opts.boss,rev:!!opts.rev,
     vdrain:!!(vr&&vr.drain),skipTurn:false,field:opts.field||null,
     escalate:!!S.escalate,centi:!!S.centi,phase:0,phase2:false};
+  // P4A: 조사 단서 「갈라진 방울」 — 장산범의 첫 의태(거울 수) 간파. 사전 고지, 단서 없어도 정상 (진행 비필수)
+  if(sp==='jangsanbeom'&&caseState&&caseState.act===act&&caseState.clues.indexOf('갈라진 방울')>=0){
+    enemy.pat=enemy.pat.map((mv,ix)=>ix===0&&mv.m!==undefined?{b:8}:mv);
+    setTimeout(()=>toast('査 갈라진 방울의 울림을 안다 — 장산범의 첫 의태가 통하지 않는다 (첫 수: 웅크림)',true),1700);
+  }
   player={block:0,str:0,weak:0,han:0,nextAtk:0,revive:false,nineUsed:false,turnAtk:false};
   energy=3+(hasRelic('jipsin')?1:0);
   carryE=0; channeled=null; firstCardPlayed=false; dmgTurnAcc=0; sinmyeong=0; gutCastTurn=false;
@@ -4558,6 +4577,19 @@ function genMap(){
   }
   mapRows.push([{t:'rest'}]);
   mapRows.push([{t:'boss'}]);
+  // P4A(v10.15): 부정거리 사건 「사라진 목소리」 — 막당 조사 노드 1개, 비전투 노드 치환 (전투 수 불변 가드레일).
+  // 치환 우선순위 기연>장터>당산목 — 구매·회복 접점 보존 (Codex 교차 검토). 후보 없으면 미배치 (~0.5%)
+  if(act===0){
+    const cands=[];
+    for(let r=1;r<=4;r++)mapRows[r].forEach((n,i)=>{if(n.t!=='battle'&&n.t!=='elite')cands.push({r,i,t:n.t});});
+    if(cands.length){
+      const pri={event:0,shop:1,rest:2};
+      const best=Math.min(...cands.map(c=>pri[c.t]!==undefined?pri[c.t]:9));
+      const pool=cands.filter(c=>(pri[c.t]!==undefined?pri[c.t]:9)===best);
+      const c=pool[Math.floor(Math.random()*pool.length)];
+      mapRows[c.r][c.i]={t:'investigate'};
+    }
+  }
   // 경로 간선: 단조(비교차) 매핑 + 진입 보정 → 모든 노드 도달 가능, 막다른 길 없음
   for(let r=0;r<mapRows.length-1;r++){
     const A=mapRows[r], B=mapRows[r+1], m=A.length, n=B.length;
@@ -4590,20 +4622,21 @@ function genMap(){
     battleNodes.splice(idx,1)[0].enemy={sp,variant:null};
   }
 }
-const NODE_META={battle:['鬼','원귀'],elite:['凶','흉귀'],event:['緣','기연'],rest:['木','당산목'],shop:['市','장터'],boss:['門','문지기']};
+const NODE_META={battle:['鬼','원귀'],elite:['凶','흉귀'],event:['緣','기연'],rest:['木','당산목'],shop:['市','장터'],boss:['門','문지기'],investigate:['査','조사']};
 // ---------- 런 계측 (로컬 전용 — 외부 전송 없음) ----------
 let runStats=null, rsBattleTurns=0, rsCombat=null;
 let turnCardCount=0, sagiTurnUsed=false, battleHealAcc=0, battleFirstCardUsed=false;   // 턴/전투 단위 강화 상태
 let exhaustPile=[], battleSelfAcc=0, sacTurnGained=false;   // v0.8: 소멸 더미 / 이번 전투 바친 제물 / 핏값 턴당 1회
 let swapSinTurn=false, gutSwapFree=false, swapDiscountLeft=0, twinbellTurnUsed=false;   // v0.8 강신 댄스: 여흥 턴당 1회 / 맞이굿 무료 전환 / 쌍방울 할인
 let battleHealTotal=0, turnHealed=false, turnAtkCards=0;   // v0.9: 전투 누적 회복(명줄 당기기) / 이번 턴 회복 여부(보은) / 턴 공격 카드 수(낙인화로)
+let caseState=null;   // P4A(v10.15): 거리 사건 조사 상태 {act,clues[],picked[]} — 런 저장 additive (mapVersion 4 유지, up/bond 전례)
 function initRunStats(){
   rareLuck=0.15;   // pity는 런 귀속 — 새 굿에서 이전 런의 누적이 새면 계측(레어 제시율)도 오염된다
   runStats={v:3,diff:diffMode,bodyGod:party[0]?party[0].sp:null,ts:Date.now(),
     acts:{0:{startHP:teamHP,startMax:teamMax}},dmgTaken:0,outHeal:0,battles:0,turns:0,paths:{},
     chiseong:0,deathAct:null,win:null,
     combats:[],rewards:[],final:null,
-    drafts:[]};   // v2: 전투별·보상별·최종 스냅샷 / v3: 드래프트 제시·픽 기록 (픽률·스킵률 계측)
+    drafts:[],investigations:[]};   // v2: 전투별·보상별·최종 / v3: 드래프트 / v4(P4A): 조사 기록 — 리듬 판정 계측 선매설
 }
 function rsReward(choice,target){
   if(runStats&&runStats.rewards)runStats.rewards.push({act,enemy:enemy?enemy.sp:null,choice,target:target||null});
@@ -4653,7 +4686,7 @@ function saveRun(){
       mapVersion:4,diff:diffMode,mapCur,pendingHaewon,boons,
       party,deck,relics,tokens,teamHP,teamMax,act,mapRows,mapPos,depth,
       kills,seals,sendoffs,sinwi,gongdeok,coins,revDone,honsuDone,uidSeq,bless:nextBless,
-      rareLuck,
+      rareLuck,caseState,
       runStats
     }));
   }catch(e){}
@@ -4670,7 +4703,8 @@ function loadRun(){
     kills=s.kills;seals=s.seals;sendoffs=s.sendoffs;sinwi=s.sinwi;gongdeok=s.gongdeok;coins=s.coins;
     revDone=!!s.revDone;honsuDone=!!s.honsuDone;uidSeq=s.uidSeq||1000;nextBless=!!s.bless;
     runStats=s.runStats||null;
-    if(runStats){runStats.combats=runStats.combats||[];runStats.rewards=runStats.rewards||[];runStats.drafts=runStats.drafts||[];}   // v1/v2 저장 호환
+    if(runStats){runStats.combats=runStats.combats||[];runStats.rewards=runStats.rewards||[];runStats.drafts=runStats.drafts||[];runStats.investigations=runStats.investigations||[];}   // v1~v3 저장 호환
+    caseState=s.caseState||null;   // P4A 백필 — 구저장은 이번 막 조사 없음, 크래시 경로 없음
     rareLuck=(typeof s.rareLuck==='number')?s.rareLuck:0.15;
     diffMode=s.diff||'bongut';                            // 난이도는 런에 귀속
     channeled=null;
@@ -4744,6 +4778,7 @@ function nodeSummary(node){
       parts.push('뒷전거리 — 수법이 한층 사나워졌다 (상위 패턴)');
   }
   else if(node.t==='elite')parts.push('<b>흉귀</b> — 강하지만 무구를 떨군다');
+  else if(node.t==='investigate')parts.push('<b>査 조사 — 사라진 목소리</b> — 싸움 없이 단서를 모은다. 단서는 문지기 앞에서 빛을 본다 (두 곳만 살필 수 있다)');
   else if(node.t==='rest')parts.push('<b>당산목</b> — 휴식·위령제·천도재·소각·편성');
   else if(node.t==='shop')parts.push('<b>장터</b> — 엽전으로 부적·무구·신물');
   else if(node.t==='event')parts.push('<b>기연</b> — 무슨 일이 벌어질지 모른다');
@@ -4917,6 +4952,7 @@ function chooseNode(r,i){
   else if(node.t==='boss')startBattle(ACTS[act].boss,{boss:true});
   else if(node.t==='rest')openRest();
   else if(node.t==='shop')openShop();
+  else if(node.t==='investigate')openInvestigate();
   else openEvent();
 }
 function advanceMapRaw(){
@@ -5065,6 +5101,70 @@ function openRest(){
     opts.appendChild(hb);
   }
   show('restOv');
+}
+// ---------- P4A(v10.15): 거리 사건 조사 — 부정거리 「사라진 목소리」 ----------
+// 텍스트는 원안 저자(Codex) 감수본. 신규 오버레이 없이 eventOv 재사용. 조사는 진행 비필수.
+const CASE_BUJEONG={
+  title:'査 사라진 목소리',
+  intro:'문패가 전부 뒤집힌 마을. 귀신을 보는 아이, 복이가 옷자락을 당긴다.',
+  boki:['밤에는 이름을 부르면 안 돼요. 산이 먼저 외워 버리거든요.',
+        '저 고개에서 스승님 목소리가 나요. 그런데 스승님은 그런 식으로 절 부르지 않아요.'],
+  spots:[
+    {id:'jangseung',n:'목 갈라진 장승',d:'금줄 아래 장승의 목이 도끼로 찍혀 있다. 갈라진 나뭇결마다 서로 다른 목소리가 웅얼거린다.',
+     clue:'박힌 흰 털',cd:'목소리는 장승에서 난 것이 아니다',ally:'jangseung',
+     ad:'장승이 제 갈라진 목을 쓸어 본다. "나는 길 밖을 봐야 했다. 누군가 내 몸을 돌려놓았다."'},
+    {id:'jipsin',n:'거꾸로 놓인 꽃짚신',d:'한 짝뿐인 꽃짚신이 고개를 등지고 놓였다. 아이 발자국은 여기서 끊기고, 네 발 자국만 산으로 든다.',
+     clue:'바뀐 발자국',cd:'아이 목소리를 낸 것은 아이가 아니다',ally:'yagwanggwi',
+     ad:'야광귀가 코를 킁킁댄다. "이 신발, 아직 주인 냄새가 따뜻해. 산으로 안 갔어."'},
+    {id:'bell',n:'우물턱의 갈라진 놋방울',d:'마른 우물 턱에 붉은 실로 묶인 놋방울. 갈라진 혀가 울면 같은 음이 반 박자 늦게 되받는다.',
+     clue:'갈라진 방울',cd:'깨진 울림만은 똑같이 흉내 내지 못한다',ally:'cheonyeo',
+     ad:'처녀귀신이 우물 속을 오래 들여다본다. "물이 기억해요. 방울을 묶은 손은… 떨고 있었어요."'}
+  ]
+};
+function investigatePick(id){
+  const C=CASE_BUJEONG, sp=C.spots.find(x=>x.id===id);
+  if(!sp||!caseState)return false;
+  if(caseState.picked.length>=2||caseState.picked.indexOf(id)>=0)return false;   // 두 곳만 — 3번째는 비활성
+  caseState.picked.push(id); caseState.clues.push(sp.clue);
+  const coin=6+Math.floor(depth/2);   // depth 스케일 — 후반 조사가 빈약해지지 않게 (결합 검토)
+  coins+=coin; updateHUD(); snd.jingle();
+  toast('단서 「'+sp.clue+'」 — '+sp.cd+' (엽전 +'+coin+')',true);
+  const allyOn=sp.ally&&isActiveSp(sp.ally);
+  if(allyOn){coins+=4;updateHUD();setTimeout(()=>toast('⚯ '+sp.ad+' (엽전 +4)',true),1700);}   // 동행 반응 — 전투 수치 0
+  if(runStats&&runStats.investigations)runStats.investigations.push({act,spot:id,ally:allyOn?sp.ally:null});
+  saveRun();   // 중간 저장 — 재접속해도 단서·보상이 되감기지 않는다 (Codex 교차 검토)
+  return true;
+}
+function openInvestigate(){
+  hideAll();
+  learnNow('investigate','조사(査) — 굿판 밖에서 단서를 모은다. 단서는 문지기와의 싸움을 바꾼다');
+  if(!caseState||caseState.act!==act)caseState={act,clues:[],picked:[]};
+  renderInvestigate();
+}
+function renderInvestigate(){
+  const C=CASE_BUJEONG;
+  const left=2-caseState.picked.length;
+  $('evTitle').textContent=C.title;
+  $('evText').innerHTML=C.intro+'<br><b>단서 '+caseState.clues.length+'/3</b> · '+(left>0?'두 곳만 살필 수 있다 (남은 '+left+')':'더는 살필 수 없다 — 밤이 깊어간다');
+  const opts=$('evOpts'); opts.innerHTML='';
+  const bk=document.createElement('div'); bk.className='optcard'; bk.style.cursor='default';   // 복이 — 프롤로그 최소 맥락 겸행
+  const pv=document.createElement('div'); pv.className='pv'; pv.appendChild(mkPortrait('boki',52));
+  const tx=document.createElement('div'); tx.className='tx';
+  tx.innerHTML='<b>복이 — 귀신을 보는 아이</b><span>“'+C.boki[0]+'”<br>“'+C.boki[1]+'”</span>';
+  bk.appendChild(pv); bk.appendChild(tx); opts.appendChild(bk);
+  C.spots.forEach(sp=>{
+    const done=caseState.picked.indexOf(sp.id)>=0;
+    const b=document.createElement('button'); b.className='optcard';
+    b.innerHTML='<div class="pv">'+(done?'✓':'査')+'</div><div class="tx"><b>'+sp.n+'</b><span>'+(done?('단서 「'+sp.clue+'」 — '+sp.cd):sp.d)+'</span></div>';
+    if(done||left<=0){b.disabled=true;b.style.opacity=0.55;}
+    else b.addEventListener('click',()=>{if(investigatePick(sp.id))renderInvestigate();});
+    opts.appendChild(b);
+  });
+  const leave=document.createElement('button'); leave.className='optcard';
+  leave.innerHTML='<div class="pv">🚶</div><div class="tx"><b>'+(left>0?'그만 살피고 길을 간다':'길을 간다')+'</b><span>단서는 문지기 앞에서 빛을 본다.</span></div>';
+  leave.addEventListener('click',()=>{hide('eventOv');advanceMap();});
+  opts.appendChild(leave);
+  show('eventOv');
 }
 function openEvent(){
   const evs=['shrine','blood','umul','ssireum','sangyeo'];
@@ -5397,7 +5497,7 @@ function newRun(){
       SPIRITS[sp].cards.forEach(c=>addCard(c,sp));
       teamMax=80; teamHP=80; kills=0; seals=0; sendoffs=0;
       sinwi=0; gongdeok=0; coins=15; sinmyeong=0; boons=[]; boonFirstAtkLeft=0;
-      revDone=false; honsuDone=false;
+      revDone=false; honsuDone=false; caseState=null;
       act=0; depth=0; channeled=null;
       initRunStats();
       renderRelics();
