@@ -112,14 +112,56 @@ const test=`
     assert.equal(typeof dissolveOf,'function');
     assert.equal(BAYER4.length,4); assert.ok(BAYER4.every(r=>r.length===4));
     console.log('[디졸브/와스프] OK');
-    // 10) 사운드 레이어: AC 없는 환경에서도 전 계통×강약 무예외 + 덕킹/BGM API
-    muted=false;
-    for(const fam of ['slash','talisman','hanMist','seal','ward','heal','impact',null])snd.cast(fam);
-    for(const fam of ['slash','talisman','hanMist','seal','impact'])
-      for(const pos of ['first','mid','last'])snd.strike(fam,pos);
-    duckMusic(5,0.4); startDrone(); bgmTick(); stopDrone();
-    assert.equal(typeof musicG,'function');
-    console.log('[사운드레이어] 시전·적중·잔향/덕킹 무예외');
+    // 10) 사운드 계측: 가짜 AudioContext로 버스 연결·강약 볼륨·덕킹 예약·연타 순서를 검증
+    const ramps=[], gains=[], DEST={id:'dest'};
+    const P=name=>({value:1,
+      setValueAtTime:(v,t)=>ramps.push([name,'set',v]),
+      exponentialRampToValueAtTime:(v,t)=>ramps.push([name,'exp',v]),
+      linearRampToValueAtTime:(v,t)=>ramps.push([name,'lin',v]),
+      cancelScheduledValues:()=>{}});
+    window.AudioContext=function(){return {
+      currentTime:0,sampleRate:8000,state:'running',destination:DEST,resume:()=>{},
+      createOscillator(){return {type:'',frequency:P('freq'),connect:()=>{},start:()=>{},stop:()=>{}};},
+      createGain(){const g={gain:P('gain'),to:null,connect(t){g.to=t;}};gains.push(g);return g;},
+      createBuffer:()=>({getChannelData:()=>new Float32Array(32)}),
+      createBufferSource(){return {loop:false,connect:()=>{},start:()=>{},stop:()=>{}};},
+      createBiquadFilter(){return {type:'',Q:{value:0},frequency:P('bpf'),connect:()=>{}};},
+    };};
+    AC=null; musicBus=null; muted=false;
+    const gset=()=>ramps.filter(r=>r[0]==='gain'&&r[1]==='set').map(r=>r[2]);
+    ramps.length=0; snd.strike('slash','first');
+    const vF=gset(); assert.equal(vF.length,3,'first는 본체+칼날+잔향 3레이어'); assert.ok(Math.abs(vF[0]-0.09)<1e-9);
+    ramps.length=0; snd.strike('slash','mid');
+    const vM=gset(); assert.equal(vM.length,2,'mid는 잔향 생략'); assert.ok(vM[0]<vF[0],'mid는 약하게');
+    ramps.length=0; snd.strike('slash','last');
+    const vL=gset(); assert.ok(vL[0]>vF[0],'last는 재강조(1.2배)');
+    const mg=musicG();
+    assert.ok(mg&&mg.to===DEST,'음악 버스는 출력에 연결');
+    gains.length=0; snd.tap();
+    assert.equal(gains[0].to,DEST,'효과음은 버스를 거치지 않는다');
+    startDrone();
+    assert.ok(droneNodes&&droneNodes.g.to===mg,'드론은 음악 버스로');
+    const MR=Math.random; Math.random=()=>0.99;
+    gains.length=0; bgmTick(); Math.random=MR;
+    assert.ok(gains.length===1&&gains[0].to===mg,'BGM 종소리도 음악 버스로');
+    ramps.length=0; duckMusic(5,0.4);
+    const lins=ramps.filter(r=>r[1]==='lin').map(r=>r[2]);
+    assert.ok(lins.some(v=>Math.abs(v-Math.pow(10,-5/20))<1e-6),'덕킹 −5dB 램프');
+    assert.equal(lins[lins.length-1],1,'덕킹 후 복귀 램프');
+    stopDrone(); assert.equal(droneNodes,null);
+    // 적 다단 공격 강약 전달: dmgPlayer의 hitPos가 strike까지 도달하는지
+    const posLog=[], origStrike=snd.strike;
+    snd.strike=(f,p)=>posLog.push(p);
+    player.block=0; dmgPlayer(3,false,false,'first'); dmgPlayer(3,false,true,'mid'); dmgPlayer(3,false,false,'last'); dmgPlayer(3);
+    snd.strike=origStrike;
+    assert.deepEqual(posLog,['first','mid','last','first'],'연타 순서 first→mid→last');
+    // 투사체 적중 연출 지연: talisman은 도착 시점(fly×PIX_FPS)까지 히트스톱이 걸리지 않는다
+    enemy.hp=500; freezeT=0; flashT=0;
+    dmgEnemy(22,'#c99b3f',false,false,'talisman');
+    assert.equal(freezeT,0,'발사 직후에는 적중 연출 없음');
+    await sleep(FX_DEFS.talisman.fly*(1/12)*1000+80);
+    assert.ok(freezeT>0||flashT>0,'도착 시점에 적중 연출 실행');
+    console.log('[사운드계측] 버스/강약/덕킹/연타순서/투사체지연 OK');
     inBattle=false; stopDrone();
     console.log('SMOKE_OK');
     process.exit(0);
