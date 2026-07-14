@@ -96,15 +96,25 @@ const test=`
     console.log('[스케일] 지네각시 HP='+enemy.max);
     assert.ok(Math.abs(enemy.max-150)<=10,'스케일 테이블 이탈(본굿 3막 보스 ×1.10): '+enemy.max);   // v0.7.3: 기본 136 × 1.10
     inBattle=false; stopDrone();
-    // 묘귀 아홉 목숨
+    // 묘귀 보은 (v0.9: 아홉목숨 → 회복 축 payoff 리워크)
     party.push({sp:'myogwi',lv:1,wh:2});
     startBattle('samokgu');
     await sleep(950);
+    enemy.hp=500; enemy.max=500;
     setChannel('myogwi',true);
-    player.block=0; teamHP=3;
-    dmgPlayer(50);
-    console.log('[아홉목숨] teamHP='+teamHP);
-    assert.equal(teamHP,1); assert.equal(player.nineUsed,true);
+    assert.equal(SPIRITS.myogwi.aura.id,'gratitude','묘귀 오라 리워크');
+    player.str=0; player.nextAtk=0; player.turnAtk=false; turnHealed=false;
+    let ehp=enemy.hp; energy=3;
+    hand.push({uid:9090,id:'bujeok',owner:null});
+    await playCard(hand[hand.length-1],null);
+    assert.equal(ehp-enemy.hp,6,'회복 없는 턴 — 보은 미발동');
+    teamHP=Math.min(teamMax,teamHP); teamHP-=5; healPlayer(3);   // 회복 발생
+    player.turnAtk=false;                                        // 새 턴 첫 공격 흉내
+    ehp=enemy.hp; energy=3;
+    hand.push({uid:9091,id:'bujeok',owner:null});
+    await playCard(hand[hand.length-1],null);
+    assert.equal(ehp-enemy.hp,9,'회복한 턴 첫 공격 +3');
+    console.log('[보은] 회복 조건·첫 공격 한정 OK');
     // 이무기 恨 증폭
     party.push({sp:'imugi',lv:1,wh:3});
     setChannel('imugi',true);

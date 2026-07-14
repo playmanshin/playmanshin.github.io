@@ -701,25 +701,25 @@ const CARDS={
   dalgyal1:{name:'데굴데굴',cost:1,v:{block:5,draw:1},u:{block:7,draw:1}},
   dalgyal2:{name:'무표정',cost:1,v:{weak:2},u:{weak:3}},
   dalgyal3:{name:'낯없음',cost:0,v:{draw:1},u:{draw:2}},
-  dokkaebi1:{name:'방망이질',cost:1,v:{dmg:10},u:{dmg:13}},
+  dokkaebi1:{name:'방망이질',cost:1,v:{dmg:9,cond:{k:'enemyBlock',bonus:5}},u:{dmg:12,cond:{k:'enemyBlock',bonus:6}}},
   dokkaebi2:{name:'도깨비불',cost:1,v:{dmg:3,hits:2,dot:1},u:{dmg:4,hits:2,dot:2}},
   dokkaebi3:{name:'금 나와라 뚝딱',cost:1,v:{energy:2,draw:1},u:{cost:0,energy:2,draw:1}},
   mul1:{name:'물귀신 작전',cost:1,v:{dmg:9,selfDmg:3},u:{dmg:13,selfDmg:3}},
   mul2:{name:'소용돌이',cost:2,v:{dmg:4,hits:3},u:{dmg:5,hits:3}},
-  mul3:{name:'물장막',cost:1,v:{block:8},u:{block:11}},
+  mul3:{name:'물장막',cost:1,v:{block:7,cond:{k:'enemyWeak',bonus:4}},u:{block:10,cond:{k:'enemyWeak',bonus:4}}},
   eoduk1:{name:'그림자 숨기',cost:1,v:{block:7},u:{block:10}},
   eoduk2:{name:'야습',cost:1,v:{dmg:6,draw:1},u:{dmg:8,draw:1}},
-  eoduk3:{name:'어둠뭉치',cost:1,v:{dmg:7},u:{dmg:10}},
+  eoduk3:{name:'어둠뭉치',cost:1,v:{dmg:6,cond:{k:'myBlock3',bonus:4}},u:{dmg:9,cond:{k:'myBlock3',bonus:4}}},
   yagwang1:{name:'신발 훔치기',cost:1,v:{dmg:4,energy:1},u:{dmg:7,energy:1}},
-  yagwang2:{name:'낄낄',cost:0,v:{dmg:3},u:{dmg:5}},
-  yagwang3:{name:'밤도망',cost:0,v:{block:4},u:{block:6}},
+  yagwang2:{name:'낄낄',cost:0,v:{dmg:3,cond:{k:'turnCards',bonus:4}},u:{dmg:4,cond:{k:'turnCards',bonus:5}}},
+  yagwang3:{name:'밤도망',cost:0,v:{block:3,cond:{k:'energyLeft',bonus:3}},u:{block:4,cond:{k:'energyLeft',bonus:4}}},
   gaek1:{name:'허겁지겁',cost:1,v:{dmg:7,heal:3},u:{dmg:9,heal:4}},
   gaek2:{name:'구걸',cost:0,v:{draw:2},u:{draw:2,block:3}},
   gaek3:{name:'빌붙기',cost:1,v:{block:6,draw:1},u:{block:8,draw:1}},
   dueok1:{name:'악몽 짓누르기',cost:2,v:{dmg:13,weak:1},u:{dmg:16,weak:2}},
   dueok2:{name:'광란',cost:1,v:{dmg:5,hits:2,selfDmg:1},u:{dmg:6,hits:2,selfDmg:1}},
   dueok3:{name:'포악',cost:0,v:{str:1,selfDmg:1},u:{str:2,selfDmg:1}},
-  saja1:{name:'명부 호명',cost:2,fx:'hanMist',v:{dmg:15},u:{dmg:20}},
+  saja1:{name:'명부 호명',cost:2,fx:'hanMist',v:{dmg:13,cond:{k:'enemyHan',bonus:6}},u:{dmg:17,cond:{k:'enemyHan',bonus:7}}},
   saja2:{name:'검은 장막',cost:1,v:{block:9,dot:1},u:{block:12,dot:2}},
   saja3:{name:'명줄 끊기',cost:1,fx:'hanMist',v:{dmg:5,hanBonus:1},u:{dmg:7,hanBonus:1}},
   songak1:{name:'바늘 찌르기',cost:1,v:{dmg:4,dot:2},u:{dmg:5,dot:3}},
@@ -727,7 +727,7 @@ const CARDS={
   songak3:{name:'원한의 혼례',cost:2,v:{dmg:10,weak:2},u:{dmg:13,weak:2}},
   mongdal1:{name:'곡하기',cost:1,v:{weak:2,dot:1},u:{weak:3,dot:2}},
   mongdal2:{name:'상여 흔들기',cost:1,v:{dmg:6,draw:1},u:{dmg:8,draw:1}},
-  mongdal3:{name:'이승 미련',cost:0,v:{block:3,heal:1},u:{block:4,heal:3}},
+  mongdal3:{name:'이승 미련',cost:0,v:{block:3,cond:{k:'intentAtk',bonus:3}},u:{block:4,cond:{k:'intentAtk',bonus:4}}},
   yeommae1:{name:'저주 단지',cost:1,v:{dot:4},u:{dot:6}},
   yeommae2:{name:'앙갚음',cost:1,fx:'hanMist',v:{dmg:5,curseSyn:true},u:{dmg:7,curseSyn:true}},
   yeommae3:{name:'깨물기',cost:0,fx:'hanMist',v:{dmg:3,dot:1},u:{dmg:4,dot:2}},
@@ -749,7 +749,7 @@ const CARDS={
   salnalligi:{name:'살(煞) 날리기',cost:1,gear:true,fx:'hanMist',v:{dmg:4,curseBurn:12},u:{dmg:6,curseBurn:16}},
   ssitgimgut:{name:'씻김굿',cost:1,gear:true,v:{clearHan:true,block:8},u:{clearHan:true,block:11,heal:4}},
   // 장승
-  jang1:{name:'말뚝 치기',cost:1,v:{dmg:9},u:{dmg:12}},
+  jang1:{name:'말뚝 치기',cost:1,v:{dmg:8,cond:{k:'myBlock5',bonus:5}},u:{dmg:10,cond:{k:'myBlock5',bonus:6}}},
   jang2:{name:'부라린 눈',cost:1,v:{weak:2,strDown:1},u:{weak:3,strDown:1}},
   jang3:{name:'뿌리내림',cost:2,v:{block:14},u:{block:18}},
   // 묘귀
@@ -757,12 +757,12 @@ const CARDS={
   myo2:{name:'밤 울음',cost:1,v:{weak:2},u:{weak:2,dot:2}},
   myo3:{name:'도둑걸음',cost:0,v:{block:4,draw:1},u:{block:6,draw:1}},
   // 삼목구
-  sam1:{name:'저승 이빨',cost:1,v:{dmg:8},u:{dmg:11}},
+  sam1:{name:'저승 이빨',cost:1,v:{dmg:7,cond:{k:'firstAtk',bonus:4}},u:{dmg:10,cond:{k:'firstAtk',bonus:5}}},
   sam2:{name:'세 눈 부릅',cost:0,v:{nextAtk:5},u:{nextAtk:8}},
   sam3:{name:'지옥 추격',cost:2,v:{dmg:6,hits:2},u:{dmg:8,hits:2}},
   // 불가사리
-  bul1:{name:'들이받기',cost:1,v:{dmg:11},u:{dmg:14}},
-  bul2:{name:'쇠비늘',cost:1,v:{block:10},u:{block:13}},
+  bul1:{name:'들이받기',cost:1,v:{dmg:9,cond:{k:'lowHP',bonus:6}},u:{dmg:12,cond:{k:'lowHP',bonus:6}}},
+  bul2:{name:'쇠비늘',cost:1,v:{block:8,cond:{k:'lostHP',bonus:5}},u:{block:10,cond:{k:'lostHP',bonus:5}}},
   bul3:{name:'우걱우걱',cost:1,v:{heal:5,block:4},u:{heal:7,block:5}},
   // 이무기
   imu1:{name:'휘감기',cost:1,v:{dmg:7,weak:1},u:{dmg:9,weak:1}},
@@ -809,7 +809,14 @@ const CARDS={
   // 자해(제물) 축 payoff: 사기(士氣) 전례대로 턴당 1회
   pitgap:{name:'핏값',cost:1,gear:true,exhaust:true,v:{power:{k:'sac',v:1,label:'血'}},u:{cost:0,power:{k:'sac',v:1,label:'血'}}},
   // 조건부 배율: 직격 한정·증가분 캡 +16·단일 타 — 다단×배율 곱연산(v0.5 차단 논거) 원천 배제, 恨 자체는 불변
-  sinbeol:{name:'신벌(神罰)',cost:2,gear:true,fx:'hanMist',v:{dmg:9,hanMult:12},u:{dmg:11,hanMult:10}}
+  sinbeol:{name:'신벌(神罰)',cost:2,gear:true,fx:'hanMist',v:{dmg:9,hanMult:12},u:{dmg:11,hanMult:10}},
+  // ---------- 축 payoff 2차 (v0.9) ----------
+  // 회복 축: 탯줄(소비형 battleHealAcc)과 분리된 전투 총계(battleHealTotal) 참조
+  mjdanggi:{name:'명줄 당기기',cost:1,gear:true,v:{dmg:5,healSyn:10},u:{dmg:7,healSyn:12}},
+  // 낙인 enabler 병목 해소 — 부여 수단이 무구 3장뿐이던 드래프트 복권 문제
+  nakinhwaro:{name:'낙인화로(火爐)',cost:1,gear:true,exhaust:true,v:{power:{k:'markAuto',v:1,label:'爐'}},u:{power:{k:'markAuto',v:2,label:'爐'}}},
+  // 점술·덱탑 payoff — 양쪽 결과 모두 유효 (꽝 없음), 점괘와 2카드 콤보
+  cheongi:{name:'천기누설',cost:1,gear:true,v:{peekAtk:6},u:{peekAtk:9}}
 };
 const GEAR_POOL=Object.keys(CARDS).filter(k=>CARDS[k].gear);
 
@@ -821,7 +828,8 @@ const GEAR_RAR={
   jakdu:'u',buk:'u',sinjangdae:'u',ogugut:'u',hyangbul:'u',gyeolgyejin:'u',nakinbu:'u',
   indujil:'u',poksalbu:'u',hyeolseo:'u',keunjeol:'u',jijeon:'u',neokoreum:'u',jisin:'u',
   sinjanggi:'r',sinnaerim:'r',wonhonbul:'r',salnalligi:'r',bijang:'r',sinmyeongpuri:'r',
-  samjaepuri:'r',pitgap:'r',sinbeol:'r'
+  samjaepuri:'r',pitgap:'r',sinbeol:'r',
+  mjdanggi:'u',cheongi:'u',nakinhwaro:'r'
 };
 // 시너지 축 11종: han恨 str힘 mark낙인 block방어 heal회복 engine패(드로·신력) curse동티 self제물 retain보존 sin신명 sal살(디버프)
 const CARD_AX={
@@ -832,7 +840,8 @@ const CARD_AX={
   nakinbu:['mark'],indujil:['mark'],poksalbu:['mark'],majimakjeol:['block'],hyeolseo:['self','engine'],
   suhobu:['retain','block'],bijang:['retain'],sinmyeongpuri:['engine'],keunjeol:['engine','block'],
   samjaepuri:['engine'],jeomgwae:['engine'],neokoreum:[],jijeon:['engine'],jisin:['block'],
-  pitgap:['self','str'],sinbeol:['han']
+  pitgap:['self','str'],sinbeol:['han'],
+  mjdanggi:['heal'],nakinhwaro:['mark'],cheongi:['engine','str']
 };
 // 신령의 축 — 첫 원소가 주축 (합 판정·드래프트 가중의 기준)
 const SPIRIT_AX={
@@ -961,7 +970,7 @@ const SPIRITS={
     story:'시집 못 가고 죽은 처녀의 넋이 깃든 인형. 밤새 제 수의를 짓는다.',
     wild:{hp:24,pat:[{t:4},{a:8},{d:2}]}},
   mongdal:{name:'몽달귀신',col:'#5e6a78',ghost:true,wh:1,cards:['mongdal1','mongdal2','mongdal3'],
-    aura:{id:'dmgReduce2',name:'곡소리',desc:'받는 공격 피해 −2'},
+    aura:{id:'sadSong',name:'서러운 곡(哭)',desc:'약화 상태의 적에게 공격 부적당 피해 +3'},   // v0.9: 살(煞) 축 payoff — 약화 14장의 수확처
     story:'장가 못 간 총각 귀신. 곡소리가 서러워서 개도 짖지 못한다.',
     wild:{hp:22,pat:[{w:2},{a:7},{g:6}]}},
   yeommae:{name:'염매',col:'#8a6a2a',ghost:true,wh:3,cards:['yeommae1','yeommae2','yeommae3'],
@@ -986,7 +995,7 @@ const SPIRITS={
     story:'백 년을 서서 마을을 지켰다. 마을이 먼저 사라졌다.',
     wild:{hp:26,pat:[{b:8},{a:8},{f:2}]}},
   myogwi:{name:'묘귀',col:'#3a3440',ghost:true,wh:2,cards:['myo1','myo2','myo3'],
-    aura:{id:'nineLives',name:'아홉 목숨',desc:'전투당 1회, 죽음을 체력 1로 버틴다'},
+    aura:{id:'gratitude',name:'보은(報恩)',desc:'회복한 턴, 첫 공격 부적 피해 +3 (산신 몸주 시 +5)'},   // v0.9: 회복 축 payoff — 안전망은 초혼·명줄이 대체
     story:'구박받다 죽은 검은 고양이. 은혜도 원한도 아홉 배로 갚는다.',
     wild:{hp:24,pat:[{a:6,h:2},{w:2},{a:8},{g:5}]}},
   samokgu:{name:'삼목구',col:'#2e3a54',ghost:true,wh:2,cards:['sam1','sam2','sam3'],
@@ -994,7 +1003,7 @@ const SPIRITS={
     story:'저승 문을 지키는 세눈박이 개. 명부에 없는 냄새를 쫓는다.',
     wild:{hp:30,pat:[{a:9},{a:5,h:2},{s:2}],patUp:[{a:6,h:2},{a:10,pc:1},{a:8,h:2}]}},
   bulgasari:{name:'불가사리',col:'#5a5e66',ghost:true,wh:2,cards:['bul1','bul2','bul3'],
-    aura:{id:'lowGuard',name:'불가살(不可殺)',desc:'체력 30% 이하일 때 받는 공격 피해 절반'},
+    aura:{id:'ironEater',name:'쇠먹기(食鐵)',desc:'턴이 넘어갈 때 버려지는 방어 3당 적 피해 1 (최대 5)'},   // v0.9: 방어 축 payoff — 이월분은 먹지 않는다
     story:'쇠를 먹고 자라는 괴수. 죽일 방법이 없어 이름이 되었다.',
     wild:{hp:34,pat:[{b:10},{a:11},{ar:2}],patUp:[{b:12,ar:1},{a:12},{t:4},{a:11,ar:1}]}},
   imugi:{name:'이무기',col:'#2e5a4e',ghost:true,wh:3,cards:['imu1','imu2','imu3'],
@@ -1234,8 +1243,8 @@ function cardDesc(v,curse,def){
   if(curse)return '불길하다… 낼 수 없다.';
   const p=[];
   if(v.power){
-    const P={str:'턴 시작마다 힘 +',heal:'턴 시작마다 회복 ',sin:'턴 시작마다 신명 +',han:'턴 시작마다 적 恨 +',blockEnd:'턴 종료마다 방어 +',sac:'제물을 바친 턴마다 힘 +'};
-    p.push('「신령부」 '+P[v.power.k]+v.power.v+(v.power.k==='sac'?' (턴당 1회)':''));
+    const P={str:'턴 시작마다 힘 +',heal:'턴 시작마다 회복 ',sin:'턴 시작마다 신명 +',han:'턴 시작마다 적 恨 +',blockEnd:'턴 종료마다 방어 +',sac:'제물을 바친 턴마다 힘 +',markAuto:'매 턴 처음 낸 공격 부적 '};
+    p.push('「신령부」 '+P[v.power.k]+v.power.v+(v.power.k==='sac'?' (턴당 1회)':(v.power.k==='markAuto'?'장이 낙인 1을 찍는다':'')));
   }
   if(v.mark)p.push('낙인 '+v.mark+' — 공격 카드마다 추가 피해, 사라지지 않음(상한 8)');
   if(v.xDmg)p.push('신력을 모두 소모, 1당 피해 '+v.xDmg+'의 일격 (최대 4타)');
@@ -1248,6 +1257,16 @@ function cardDesc(v,curse,def){
   if(v.sacScale)p.push('이번 전투 바친 제물 1당 피해 +'+v.sacScale+' (최대 +12)');
   if(v.exhaustSyn)p.push('이번 전투 소멸한 부적 1장당 피해 +'+v.exhaustSyn+' (최대 4장)');
   if(v.hanMult)p.push('적의 恨이 '+v.hanMult+' 이상이면 피해 2배 (증가분 최대 +16)');
+  if(v.healSyn)p.push('이번 전투 회복한 체력 3당 피해 +1 (최대 +'+v.healSyn+')');
+  if(v.peekAtk)p.push('덱 위 1장을 공개 — 공격 부적이면 공수 +'+v.peekAtk+', 아니면 드로우 1');
+  if(v.cond){
+    const CT={lowHP:'체력이 절반 이하면 +',lostHP:'잃은 체력 5당 +1 (최대 +',turnCards:'이번 턴 먼저 낸 부적 1장당 +1 (최대 +',
+      energyLeft:'신력이 남아 있으면 +',enemyBlock:'적이 방어를 지녔으면 +',myBlock3:'지닌 방어 3당 +1 (최대 +',
+      enemyWeak:'적이 약화 상태면 +',intentAtk:'적의 다음 수가 공격이면 +',firstAtk:'이번 턴 첫 공격이면 +',
+      enemyHan:'적에게 恨이 있으면 +',myBlock5:'방어 5 이상 지녔으면 +'};
+    const scaled=['lostHP','turnCards','myBlock3'].includes(v.cond.k);
+    p.push(CT[v.cond.k]+v.cond.bonus+(scaled?')':''));
+  }
   if(v.tokens)p.push('「소지」 '+v.tokens+'장을 손에 넣는다 — 0코 피해 3, 소멸');
   if(v.dmgPerSpirit)p.push('신단 신령 1위당 피해 '+v.dmgPerSpirit);
   if(v.hanBonus)p.push('적의 恨 1당 피해 +'+v.hanBonus);
@@ -2781,8 +2800,6 @@ function intentDetail(){
     const m=[];
     if(enemy.weak>0)m.push('약화 −25%');
     if(enemy.field==='bloodmoon')m.push('핏빛 달 +2');
-    if(auraId()==='dmgReduce2')m.push('곡소리 신기 −2');
-    if(auraId()==='lowGuard'&&teamHP<=teamMax*0.3)m.push('불가살 절반');
     if(hasBoon('bultoe')&&teamHP>=teamMax*0.5)m.push('불퇴 −2');
     return m.length?' ['+m.join(' · ')+']':'';
   }
@@ -2993,6 +3010,7 @@ function healPlayer(n){
     }
   }
   teamHP+=real;
+  if(inBattle&&real>0){battleHealTotal+=real;turnHealed=true;}   // v0.9: 명줄 당기기·보은의 회계 (탯줄의 소비형 battleHealAcc와 분리)
   if(real>0){
     if(!inBattle&&runStats)runStats.outHeal+=real;
     float2(SHAMAN_POS[0],SHAMAN_POS[1]-70,'+'+real,'#4fa86a');snd.heal();
@@ -3002,8 +3020,6 @@ function healPlayer(n){
 // 적 공격 1타의 실제 피해 (방어 적용 전) — 전투 실행과 의도 표시가 함께 쓴다
 function calcIncomingHit(baseAtk){
   let vv=Math.round(baseAtk*(enemy&&enemy.weak>0?0.75:1))+(enemy&&enemy.field==='bloodmoon'?2:0);
-  if(auraId()==='dmgReduce2')vv=Math.max(0,vv-2);
-  if(auraId()==='lowGuard'&&teamHP<=teamMax*0.3)vv=Math.ceil(vv/2);
   if(hasBoon('bultoe')&&teamHP>=teamMax*0.5)vv=Math.max(0,vv-2);
   return vv;
 }
@@ -3040,6 +3056,26 @@ function dotPlayer(n){
   float2(SHAMAN_POS[0],SHAMAN_POS[1]-74,'-'+n+' 恨','#9a6fd0');
   if(teamHP<=0){teamHP=0;defeat();}
   updateHUD();
+}
+// 조건부 보너스(v.cond) 단일 평가기 (v0.9) — 공격 카드는 피해에, 방어 카드는 방어에 가산.
+// 전부 공개 정보만 조건으로 쓴다 (숨은 카운터 금지). firstAtk는 turnAtk 설정 전에 평가할 것.
+function condBonus(v){
+  if(!v.cond)return 0;
+  const c=v.cond;
+  switch(c.k){
+    case 'lowHP':return teamHP<=teamMax*0.5?c.bonus:0;                                // 체력 절반 이하
+    case 'lostHP':return Math.min(c.bonus,Math.floor((teamMax-teamHP)/5));            // 잃은 체력 5당 +1
+    case 'turnCards':return Math.min(c.bonus,Math.max(0,turnCardCount-1));            // 이번 턴 먼저 낸 카드당 +1
+    case 'energyLeft':return energy>0?c.bonus:0;                                      // 지불 후 신력 잔존
+    case 'enemyBlock':return enemy&&enemy.block>0?c.bonus:0;
+    case 'myBlock3':return Math.min(c.bonus,Math.floor(player.block/3));              // 지닌 방어 3당 +1
+    case 'enemyWeak':return enemy&&enemy.weak>0?c.bonus:0;
+    case 'intentAtk':return enemy&&!enemy.skipTurn&&enemy.pat[enemy.pi%enemy.pat.length].a!==undefined?c.bonus:0;   // 의도는 상시 공개 정보
+    case 'firstAtk':return !player.turnAtk?c.bonus:0;
+    case 'enemyHan':return enemy&&enemy.han>0?c.bonus:0;
+    case 'myBlock5':return player.block>=5?c.bonus:0;
+  }
+  return 0;
 }
 // 제물(자해·체력 지불) 단일 창구 — 이번 전투 누적 + 핏값 신령부 격발 (턴당 1회)
 function onSacrifice(n){
@@ -3152,6 +3188,8 @@ async function playCard(inst,el){
     if(v.blockDmg)atkBase=Math.min(v.blockDmg,player.block);             // 지신밟기: 지닌 방어만큼 (상한 12 = 방어이월 상한 어휘)
     if(v.sacScale)atkBase+=Math.min(12,battleSelfAcc*v.sacScale);        // 작두 타기: 이번 전투 바친 제물 비례 (상한 +12)
     if(v.exhaustSyn)atkBase+=Math.min(4,exhaustPile.length)*v.exhaustSyn;// 넋오름: 소멸 더미 참조 (최대 4장)
+    if(v.healSyn)atkBase+=Math.min(v.healSyn,Math.floor(battleHealTotal/3));   // 명줄 당기기: 전투 누적 회복 3당 +1
+    if(v.cond)atkBase+=condBonus(v);                                     // 조건부 보너스 — turnAtk 설정 전 평가 (firstAtk)
     atkBase+=inst.ramp||0; inst.ramp=0;                                  // 비장의 부적 담금질 (사용 시 초기화)
     const pierce=auraId()==='pierce';
     let curseBonus=0;
@@ -3174,6 +3212,11 @@ async function playCard(inst,el){
         if(firstAtkBonusLeft>0){base+=5;firstAtkBonusLeft=0;float2(SHAMAN_POS[0],SHAMAN_POS[1]-90,'신칼 +5','#c99b3f');}
         if(auraId()==='firstAtk4'&&firstOfTurn){base+=4;float2(SHAMAN_POS[0],SHAMAN_POS[1]-96,'세 번째 눈 +4','#c99b3f');}
         if(boonFirstAtkLeft>0){base+=4;boonFirstAtkLeft=0;float2(SHAMAN_POS[0],SHAMAN_POS[1]-102,'선봉 +4','#c99b3f');}
+        if(auraId()==='sadSong'&&enemy.weak>0){base+=3;float2(SHAMAN_POS[0],SHAMAN_POS[1]-108,'서러운 곡 +3','#7a6fa0');}   // 공격 카드당 1회 (첫 타)
+        if(auraId()==='gratitude'&&firstOfTurn&&turnHealed){                                                                // 회복한 턴, 첫 공격 카드만
+          const gb=(party[0]&&party[0].sp==='sansin')?5:3;
+          base+=gb;float2(SHAMAN_POS[0],SHAMAN_POS[1]-114,'보은 +'+gb,'#4fa86a');
+        }
       }
       if(hasBoon('yeongyeok')&&hits>1)base+=1;
       if(hasBoon('chamsu')&&enemy.hp<=enemy.max*0.3)base+=5;
@@ -3191,6 +3234,14 @@ async function playCard(inst,el){
         hits>1?(h===0?'first':h===hits-1?'last':'mid'):undefined);
       if(enemy.thorns>0&&teamHP>0){snd.thorn();dmgPlayer(enemy.thorns);if(teamHP<=0)return;}  // 반사: 타격당
       if(hits>1)await sleep(160);
+    }
+    turnAtkCards++;
+    // 낙인화로: 매 턴 처음 낸 공격 부적 N장이 낙인 1을 찍는다 (v0.9) — 인주 합산, 상한 8 클램프는 공유
+    const markPw=powers.find(p=>p.k==='markAuto');
+    if(markPw&&turnAtkCards<=markPw.v&&enemy.hp>0){
+      const am=1+(hasRelic('inju')?1:0);
+      enemy.mark=Math.min(8,(enemy.mark||0)+am);
+      float2(ENEMY_POS[0],ENEMY_POS[1]-64,'烙 화로 '+enemy.mark,'#e0703a'); snd.buff();
     }
     if(enemy.mark>0&&enemy.hp>0)dmgEnemy(enemy.mark,'#e0703a',false,true);   // 낙인: 공격 카드당 1회 (철갑 관통)
     if(enemy.hp>0){
@@ -3213,7 +3264,7 @@ async function playCard(inst,el){
   }
   if(v.selfDmg){const paid=dmgPlayer(v.selfDmg);if(teamHP<=0)return;onSacrifice(paid);}   // 제물 = 실제 잃은 체력만 (방어에 흡수되면 바친 게 아니다)
   if(v.block){
-    const bn=v.block+(auraId()==='blockPlus2'?2:0);
+    const bn=v.block+(auraId()==='blockPlus2'?2:0)+(!isAttack&&v.cond?condBonus(v):0);   // 방어 카드의 조건부 보너스 (v0.9)
     player.block+=bn;snd.block();spawnFx('ward',SHAMAN_POS[0],SHAMAN_POS[1]-38);
     float2(SHAMAN_POS[0],SHAMAN_POS[1]-70,'+'+bn+' 방어','#3f6a9e');
     if(hasBoon('yongteullim')){player.nextAtk+=1;float2(SHAMAN_POS[0],SHAMAN_POS[1]-84,'용틀임 공수 +1','#c99b3f');}
@@ -3262,6 +3313,16 @@ async function playCard(inst,el){
     snd.gutcast();
     if(hasRelic('hyangno'))healPlayer(3);
     }
+  }
+  if(v.peekAtk){   // 천기누설: 덱 위 1장 공개 — 공격이면 공수, 아니면 드로우 (양쪽 다 유효)
+    if(!drawPile.length&&discard.length){drawPile=shuffleA(discard.slice());discard=[];}
+    const top=drawPile[drawPile.length-1];
+    if(top){
+      const tv=cardVals(top), isAtk=!!(tv.dmg||tv.xDmg||tv.comboDmg||tv.blockDmg);
+      toast('천기: 「'+CARDS[top.id].name+'」 — '+(isAtk?'살(殺)의 기운, 공수 +'+v.peekAtk:'드로우 1'),true);
+      if(isAtk){player.nextAtk+=v.peekAtk;float2(SHAMAN_POS[0],SHAMAN_POS[1]-90,'공수 +'+v.peekAtk,'#c99b3f');}
+      else drawCards(1);
+    }else drawCards(1);
   }
   if(v.tokens){
     let got=0;
@@ -3401,6 +3462,7 @@ async function endTurn(){
   firstCardPlayed=false; dmgTurnAcc=0; player.turnAtk=false; gutCastTurn=false; cardsPlayed=0;
   turnCardCount=0; sagiTurnUsed=false; sacTurnGained=false;
   swapSinTurn=false; gutSwapFree=false; swapDiscountLeft=0; twinbellTurnUsed=false;
+  turnHealed=false; turnAtkCards=0;
   for(const pw of powers){                                   // 신령부 발동
     if(pw.k==='str'){const sv=gainStr(pw.v);float2(SHAMAN_POS[0],SHAMAN_POS[1]-90,'旗 힘 +'+sv,'#c99b3f');}
     else if(pw.k==='heal')healPlayer(pw.v);
@@ -3408,9 +3470,20 @@ async function endTurn(){
     else if(pw.k==='han'&&enemy.hp>0){const got=gainHan(pw.v);if(got>0)float2(ENEMY_POS[0],ENEMY_POS[1]-50,'焰 恨 +'+got,'#9a6fd0');}
   }
   if(enemy.field==='goksori'){sinmyeong=Math.min(5,sinmyeong+1);float2(SHAMAN_POS[0],SHAMAN_POS[1]-96,'곡소리 — 신명 +1','#c99b3f');}
-  if(auraId()==='blockCarry')player.block=Math.min(player.block,12);      // 방어이월 신기 상한 12 (불변식)
-  else if(hasBoon('bineul'))player.block=Math.min(player.block,5);
-  else player.block=0;
+  {
+    const kept=(auraId()==='blockCarry')?Math.min(player.block,12)         // 방어이월 신기 상한 12 (불변식)
+      :(hasBoon('bineul')?Math.min(player.block,5):0);
+    // 쇠먹기: 이월되지 않고 버려질 방어만 먹는다 (v0.9) — 이월과의 이중이득 차단
+    if(auraId()==='ironEater'&&enemy.hp>0&&player.block>kept){
+      const ie=Math.min(5,Math.floor((player.block-kept)/3));
+      if(ie>0){
+        dmgEnemy(ie,'#8a9098');
+        float2(ENEMY_POS[0],ENEMY_POS[1]-58,'쇠먹기 '+ie,'#8a9098');
+        if(enemy.hp<=0){await winBattle();return;}
+      }
+    }
+    player.block=kept;
+  }
   if(player.han>0){
     dotPlayer(player.han); player.han--;
     if(teamHP<=0)return;
@@ -3473,6 +3546,7 @@ function startBattle(sp,opts){
   powers=[]; cardsPlayed=0; enemy.mark=0; turnCardCount=0; sagiTurnUsed=false; battleHealAcc=0; battleFirstCardUsed=false;
   exhaustPile=[]; battleSelfAcc=0; sacTurnGained=false;
   swapSinTurn=false; gutSwapFree=false; swapDiscountLeft=0; twinbellTurnUsed=false;
+  battleHealTotal=0; turnHealed=false; turnAtkCards=0;
   channelFreeLeft=hasRelic('brassbell')?1:0;
   firstAtkBonusLeft=hasRelic('oldknife')?1:0;
   deck.forEach(x=>{if(x.ramp)x.ramp=0;});   // 담금질은 전투 안에서만
@@ -3571,13 +3645,6 @@ function defeat(){
     teamHP=Math.min(teamMax,15);
     toast('초혼 — 바리공주가 저승 문턱에서 명줄을 끌어올렸다!',true);
     snd.gong(); updateHUD();
-    return;
-  }
-  if(auraId()==='nineLives'&&!player.nineUsed){
-    player.nineUsed=true;
-    teamHP=1;
-    toast('아홉 목숨 — 묘귀가 제 목숨 하나를 대신 태웠다!',true);
-    snd.stinger(); updateHUD();
     return;
   }
   const wasRev=enemy&&enemy.rev;
@@ -4046,6 +4113,7 @@ let runStats=null, rsBattleTurns=0, rsCombat=null;
 let turnCardCount=0, sagiTurnUsed=false, battleHealAcc=0, battleFirstCardUsed=false;   // 턴/전투 단위 강화 상태
 let exhaustPile=[], battleSelfAcc=0, sacTurnGained=false;   // v0.8: 소멸 더미 / 이번 전투 바친 제물 / 핏값 턴당 1회
 let swapSinTurn=false, gutSwapFree=false, swapDiscountLeft=0, twinbellTurnUsed=false;   // v0.8 강신 댄스: 여흥 턴당 1회 / 맞이굿 무료 전환 / 쌍방울 할인
+let battleHealTotal=0, turnHealed=false, turnAtkCards=0;   // v0.9: 전투 누적 회복(명줄 당기기) / 이번 턴 회복 여부(보은) / 턴 공격 카드 수(낙인화로)
 function initRunStats(){
   runStats={v:3,diff:diffMode,bodyGod:party[0]?party[0].sp:null,ts:Date.now(),
     acts:{0:{startHP:teamHP,startMax:teamMax}},dmgTaken:0,outHeal:0,battles:0,turns:0,paths:{},
