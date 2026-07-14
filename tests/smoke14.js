@@ -34,8 +34,9 @@ const test=`
     const ds=descendantSet(0,0);
     console.log('[경로집합] 후손 수='+ds.size);
     assert.ok(ds.size>=mapRows.length,'시작 노드에서 모든 행에 닿아야 한다');
-    // 의도 상세
+    // 의도 상세 — 무작위 적의 첫 수가 공격이 아닐 수 있으므로 패턴을 고정해 결정적으로 검증
     enemy.hp=500; enemy.max=500; enemy.weak=1;
+    enemy.pat=[{a:8,h:2}]; enemy.pi=0;
     const d=intentDetail();
     console.log('[의도상세] 길이='+d.length);
     assert.ok(d.length>10); assert.ok(d.includes('예상')||d.includes('약화'));
