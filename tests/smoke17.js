@@ -76,11 +76,14 @@ const test=`
     // 7) 경로 확정 후 비후손 노드 = 끊긴 길 (하이라이트 없음)
     inBattle=false;
     let found=null;
-    for(let t=0;t<30&&!found;t++){
-      genMap(); mapPos=1; mapCur=0;
-      const ds2=descendantSet(1,0);
-      for(let r=2;r<mapRows.length&&!found;r++)
-        mapRows[r].forEach((n,i)=>{if(!found&&!ds2.has(r+'-'+i))found=[r,i];});
+    for(let t=0;t<80&&!found;t++){                       // 80회 × 모든 분기 기점 — 비후손이 없는 연속 생성 확률은 사실상 0
+      genMap();
+      for(let c=0;c<mapRows[1].length&&!found;c++){
+        mapPos=1; mapCur=c;
+        const ds2=descendantSet(1,c);
+        for(let r=2;r<mapRows.length&&!found;r++)
+          mapRows[r].forEach((n,i)=>{if(!found&&!ds2.has(r+'-'+i))found=[r,i];});
+      }
     }
     assert.ok(found,'비후손 노드가 존재하는 지도 생성');
     mapNodeEls=mapRows.map(rr=>rr.map(()=>document.createElement('button')));
