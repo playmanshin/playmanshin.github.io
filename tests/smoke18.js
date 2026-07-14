@@ -19,15 +19,17 @@ const test=`
     for(let i=0;i<7;i++)addCard('bujeok');
     teamMax=100; teamHP=50; act=0; depth=0; coins=50; boons=[];
     kills=0; seals=0; sendoffs=0; sinwi=0; gongdeok=0;
-    // 1) 회복 경제: 본굿은 이야기보다 명확히 인색해야 한다
+    // 1) 회복 경제: 본굿은 이야기보다 명확히 인색해야 한다 (천도는 sendApply 단일 경로)
     diffMode='story';
     assert.equal(restHealAmt(),45); assert.equal(actHealAmt(),40);
-    assert.equal(sendHealAmt(),30); assert.equal(shopHealAmt(),45);
+    const sa=sendApply(); assert.equal(sa.newMax,103,'이야기: 최대 100→103'); assert.equal(sa.heal,31,'회복은 새 최대치 103 기준(31)');
+    assert.equal(shopHealAmt(),45);
     assert.equal(dprof().shopHealCost,30); assert.equal(dprof().gearDraft,0.5);
     assert.equal(evHealAmt(10),10); assert.equal(dprof().sendMax,3);
     diffMode='bongut';
     assert.equal(restHealAmt(),30); assert.equal(actHealAmt(),15);
-    assert.equal(sendHealAmt(),20); assert.equal(shopHealAmt(),30);
+    const sb=sendApply(); assert.equal(sb.newMax,102); assert.equal(sb.heal,20,'본굿: 102 기준 20');
+    assert.equal(shopHealAmt(),30);
     assert.equal(dprof().shopHealCost,35); assert.equal(dprof().gearDraft,0.3);
     assert.equal(evHealAmt(10),5); assert.equal(dprof().sendMax,2);
     console.log('[회복경제] 본굿 = 당산목30%/막종료15%/천도20%+2/명다리30%·35전/드래프트30%/기연 절반 OK');

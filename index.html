@@ -1061,7 +1061,6 @@ function dprof(){return DIFF[diffMode]||DIFF.bongut;}
 // 전투 외 회복 헬퍼 — 난이도 프로필이 전투 카드 밸런스를 건드리지 않도록 경로를 분리한다
 function restHealAmt(){return Math.round(teamMax*dprof().restHeal);}
 function actHealAmt(){return Math.round(teamMax*dprof().actHeal);}
-function sendHealAmt(){return Math.round(teamMax*dprof().sendHeal);}
 function shopHealAmt(){return Math.round(teamMax*dprof().shopHeal);}
 function evHealAmt(n){return Math.round(n*dprof().evHeal);}
 function evHeal(n){healPlayer(evHealAmt(n));}
@@ -2584,7 +2583,7 @@ $('btnGearClose').addEventListener('click',()=>hide('gearOv'));
 function updateHUD(){
   $('cFloor').textContent=ACTS[act].num+'·'+(mapPos+2<=0?1:Math.min(mapPos+2,ROWS_PER_ACT));
   $('cHP').innerHTML='♥<b>'+teamHP+'</b>/'+teamMax;
-  $('cWon').innerHTML='<b>원한'+wonhanTotal()+'</b>·동티'+(curseCount()+(geumje()>=1?1:0));
+  $('cWon').innerHTML='<b>원한'+wonhanTotal()+'</b>·동티'+battleCurseCount(wonhanTotal());
   $('cCoin').innerHTML='🪙 <b>'+coins+'</b>';
   $('btnDeck').textContent='덱 '+battleDeck().length+(deck.length>battleDeck().length?'+'+(deck.length-battleDeck().length):'');
   updateGutBtn();
@@ -3502,7 +3501,7 @@ function showReward(){
       seals++; sinwi+=2; updateHUD(); snd.gong();
       toast(S.name+josa(S.name,'이','가')+(slotFree?' 출전진에 들었다':' 신단에 대기한다 (당산목·막간에서 편성)')+' · 원한 +'+S.wh,true);
       tip('first_seal','🩸 거둔 귀신은 몸주신+2위까지 출전한다 — 편성은 당산목·막간의 「신단 정비」에서');
-      if(wonhanTotal()>=3)tip('wonhan_threshold','⚠ 신단 원한 '+wonhanTotal()+' — 4마다 저주 카드(동티) 1장이 전투 덱에 스며든다 (지금 '+curseCount()+'장). 전투 중 붙는 한(恨)과는 다른 수치다');
+      if(wonhanTotal()>=3)tip('wonhan_threshold','⚠ 신단 원한 '+wonhanTotal()+' — 4마다 저주 카드(동티) 1장이 전투 덱에 스며든다 (지금 '+battleCurseCount(wonhanTotal())+'장). 전투 중 붙는 한(恨)과는 다른 수치다');
       hide('rewardOv'); advanceMap();
     });
     opts.appendChild(b);
@@ -4394,7 +4393,7 @@ function openEvent(){
 // ---------- 덱 / 신단 ----------
 function openDeck(){
   const list=$('deckList'); list.innerHTML='';
-  const cc=curseCount();
+  const cc=battleCurseCount(wonhanTotal());
   const bd=battleDeck();
   const bench=deck.filter(c=>!bd.includes(c));
   $('deckTitle').textContent='이번 전투 덱 '+bd.length+'장'+(cc>0?' (+동티 '+cc+')':'')+(bench.length?' · 대기 '+bench.length:'');
@@ -4537,7 +4536,7 @@ $('btnHelpClose').addEventListener('click',()=>{snd.tap();hide('helpOv');});
 $('btnTipReset').addEventListener('click',()=>{resetTips();snd.gong();toast('튜토리얼 안내를 다시 보여준다');});
 $('cWon').style.cursor='pointer';
 $('cWon').addEventListener('click',()=>{
-  toast('신단 원한 '+wonhanTotal()+' — 봉인의 대가. <b>4마다 저주 카드(동티) 1장</b>이 매 전투 덱에 스며든다 (지금 '+curseCount()+'장).<br>전투 중 붙는 <b>한(恨)</b>은 별개 — 매 턴 그만큼 피해를 주고 1 줄어든다.',true);
+  toast('신단 원한 '+wonhanTotal()+' — 봉인의 대가. <b>4마다 저주 카드(동티) 1장</b>이 매 전투 덱에 스며든다 (지금 '+battleCurseCount(wonhanTotal())+'장).<br>전투 중 붙는 <b>한(恨)</b>은 별개 — 매 턴 그만큼 피해를 주고 1 줄어든다.',true);
 });
 $('btnCont').addEventListener('click',()=>{ac();snd.tap();if(!loadRun()){toast('이어갈 야행이 없다');showTitle();}});
 $('btnMute').addEventListener('click',()=>{

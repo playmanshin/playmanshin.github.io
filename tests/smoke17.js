@@ -73,6 +73,22 @@ const test=`
     assert.equal(loadRun(),false);
     assert.equal(localStorage.getItem('ms_run'),null);
     console.log('[저장v4] 구버전 폐기 OK');
+    // 7) 경로 확정 후 비후손 노드 = 끊긴 길 (하이라이트 없음)
+    inBattle=false;
+    let found=null;
+    for(let t=0;t<30&&!found;t++){
+      genMap(); mapPos=1; mapCur=0;
+      const ds2=descendantSet(1,0);
+      for(let r=2;r<mapRows.length&&!found;r++)
+        mapRows[r].forEach((n,i)=>{if(!found&&!ds2.has(r+'-'+i))found=[r,i];});
+    }
+    assert.ok(found,'비후손 노드가 존재하는 지도 생성');
+    mapNodeEls=mapRows.map(rr=>rr.map(()=>document.createElement('button')));
+    mapNodeTap(found[0],found[1]);
+    assert.equal(mapSel,null,'끊긴 길은 경로 하이라이트를 만들지 않는다');
+    assert.ok(document.getElementById('mapInfo').innerHTML.includes('끊긴 길'),'끊긴 길 표기');
+    mapPos=-1; mapCur=0;
+    console.log('[끊긴길] 비후손 구분 OK');
     inBattle=false; stopDrone();
     console.log('SMOKE_OK');
     process.exit(0);

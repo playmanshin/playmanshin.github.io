@@ -108,6 +108,20 @@ const test=`
     assert.equal(document.getElementById('btnGeumje').style.display,'block');
     localStorage.setItem('ms_wins','0');
     console.log('[금제게이트UI] OK');
+    // 10) 동티 표시 경로 통일: 금제1 + 원한4 → 어디서나 2장
+    diffMode='bongut'; localStorage.setItem('ms_geumje','1'); relics=[];
+    party=[{sp:'janggun',lv:1,wh:0,active:true},{sp:'cheonyeo',lv:1,wh:4,active:true}];
+    assert.equal(battleCurseCount(wonhanTotal()),2);
+    updateHUD();
+    assert.ok(document.getElementById('cWon').innerHTML.includes('동티2'),'HUD 동티 표기');
+    deck=[]; for(let i=0;i<5;i++)addCard('bujeok');
+    openDeck();
+    assert.ok(document.getElementById('deckTitle').textContent.includes('+동티 2'),'덱 화면 동티 표기');
+    localStorage.setItem('ms_geumje','0');
+    console.log('[동티통일] HUD·덱 화면 2장 OK');
+    // 11) TIP 8종 전부 실제 tip() 호출에 배선되어 있다 (소스 검증)
+    for(const id of TIP_IDS)assert.ok(src.includes("tip('"+id+"'"),id+' 팁 미배선');
+    console.log('[팁배선] 8종 전수 OK');
     inBattle=false; stopDrone();
     console.log('SMOKE_OK');
     process.exit(0);
