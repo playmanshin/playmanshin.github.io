@@ -24,7 +24,11 @@ const test=`
     assert.equal(party[1].bond,1,'출전 귀신 적립');
     assert.equal(party[2].bond,1);
     assert.equal(party[3].bond||0,0,'대기 귀신은 미적립');
-    assert.equal(msgs.length,0,'임계 전에는 무음');
+    assert.ok(msgs.some(s=>s.includes('동행(同行)')),'첫 적립 = 온보딩 설명 (v10.14 시퀀서)');
+    assert.equal(hasLearn('donghaeng'),true,'동행 학습 기록');
+    msgs=accrueBond();
+    assert.equal(msgs.length,0,'학습 후 임계 전에는 무음');
+    party[1].bond=1; party[2].bond=1;   // 임계 테스트를 위해 되감기
     party[1].bond=2;
     msgs=accrueBond();
     assert.equal(party[1].bond,3);
