@@ -122,6 +122,48 @@ const test=`
     assert.equal(hand.length,7,'개전 드로우 5+2');
     inBattle=false; stopDrone();
     console.log('[합] 대합·소합·개전 예산 6·드로/방어 보너스 OK');
+    // 예산 우회 회귀 (적대 검증): healPlayer 훅(꽃값)의 개전 恨도 예산 6에 잡힌다
+    party=[G('bari'),G('cheonyeo'),G('imugi')];
+    boons=['giljabi','heonhwa','kkotgap'];
+    deck=[]; for(let i=0;i<8;i++)addCard('bujeok');
+    teamHP=teamMax;   // 만피 — 헌화 6이 전량 초과 회복 → 꽃값 min(3,6)=3 시도
+    startBattle('gaekgwi'); await sleep(950);
+    assert.equal(enemy.han,6,'길잡이2+꽃값3+대합4+소합2 시도 → 예산 6 클램프 (healPlayer 훅 포함)');
+    boons=[];
+    inBattle=false; stopDrone();
+    // 대합 str + 소합 str: 두억시니×삼목구 + 장군 몸주
+    party=[G('janggun'),G('dueoksini'),G('samokgu')];
+    deck=[]; for(let i=0;i<8;i++)addCard('bujeok');
+    startBattle('gaekgwi'); await sleep(950);
+    assert.equal(player.str,3,'강신 힘2 + 대합 힘1');
+    assert.equal(player.nextAtk,3,'소합 공수 +3');
+    inBattle=false; stopDrone();
+    // 소합 heal: 산신 몸주 × 묘귀
+    party=[G('sansin'),G('myogwi'),G('dalgyal')];
+    deck=[]; for(let i=0;i<8;i++)addCard('bujeok');
+    teamMax=80; teamHP=70;
+    startBattle('gaekgwi'); await sleep(950);
+    assert.equal(teamHP,73,'소합 회복 3');
+    inBattle=false; stopDrone();
+    // 대합 sal: 물귀신×몽달
+    party=[G('janggun'),G('mulgwisin'),G('mongdal')];
+    deck=[]; for(let i=0;i<8;i++)addCard('bujeok');
+    startBattle('gaekgwi'); await sleep(950);
+    assert.equal(enemy.weak,2,'대합 약화 2');
+    inBattle=false; stopDrone();
+    console.log('[합·회귀] healPlayer 우회 차단·str/heal/sal 축 OK');
+    // 야습 듀엣 0코 실플레이 (신력 0에서도 낼 수 있다)
+    party=[G('janggun'),G('eoduksini'),G('yagwanggwi')];
+    deck=[]; for(let i=0;i<8;i++)addCard('bujeok');
+    startBattle('gaekgwi'); await sleep(950);
+    enemy.hp=500; enemy.max=500; player.str=0;
+    const ya={uid:uidSeq++,id:'eoduk2',owner:null}; hand.push(ya); energy=0;
+    const ey0=enemy.hp;
+    await playCard(ya,null);
+    assert.equal(ey0-enemy.hp,6,'야습이 신력 0에서 나갔다 (듀엣 0코)');
+    assert.equal(energy,0,'지불 없음');
+    inBattle=false; stopDrone();
+    console.log('[야습] 듀엣 0코 실플레이 OK');
     // 편성 화면 합 예고 렌더 무예외
     openAltar(false);
     console.log('SMOKE_OK');

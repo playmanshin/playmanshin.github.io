@@ -70,7 +70,12 @@ const test=`
     console.log('[pity] 확정·리셋·증가 OK');
     // ---- 4) showDraft 기록 + rareLuck 저장 왕복 ----
     genMap(); mapPos=-1; mapCur=0;
+    rareLuck=0.9;
     initRunStats();
+    assert.equal(rareLuck,0.15,'새 굿(initRunStats) 시 pity 리셋 — 런 간 누수 차단');
+    assert.equal(gearPrice('sinkal'),35,'커먼 35전');
+    assert.equal(gearPrice('jakdu'),45,'언커먼 45전');
+    assert.equal(gearPrice('pitgap'),60,'레어 60전 — 장터가 드래프트 게이트를 언더컷하지 않는다');
     enemy={sp:'dokkaebi',elite:true};
     inBattle=false;
     showDraft();

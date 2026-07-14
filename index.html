@@ -71,6 +71,8 @@
     padding:4px 9px; font-size:12px; font-weight:900;
     text-shadow:0 0 8px rgba(216,74,58,.6);
   }
+  #intentChip::before{content:'다음 수'; display:block; font-size:7.5px; line-height:1; letter-spacing:.14em;
+    color:#755c58; margin-bottom:3px; text-shadow:none}
   #intentChip.calm{border-color:#3f6a9e; color:#7aa0c8; background:#0c1420; text-shadow:none}
   /* ---------- 신단 바 ---------- */
   #spiritBar{
@@ -87,6 +89,29 @@
   .spchip.on{border-color:var(--gold); box-shadow:0 0 10px rgba(201,155,63,.4); background:#241a30}
   .spchip.on .nm{color:var(--gold)}
   #auraTxt{text-align:center; font-size:9.5px; font-weight:800; color:var(--gold); padding-top:2px}
+  /* ---------- 전투 판단 스트립 / 행동 결합형 튜토리얼 ---------- */
+  #combatRail{position:absolute; left:8px; right:8px; top:362px; height:48px; z-index:11; display:none}
+  #combatLedger,#battleCoach{position:absolute; inset:0; border:2px solid #1a1420;
+    box-shadow:3px 3px 0 rgba(0,0,0,.58); overflow:hidden}
+  #combatLedger{display:grid; grid-template-columns:1fr 1.22fr; background:#ece4d2; color:#1a1420}
+  #combatLedger .ledger-cell{display:flex; flex-direction:column; justify-content:center; padding:4px 9px}
+  #combatLedger .ledger-cell+ .ledger-cell{border-left:1px solid #7c7060}
+  #combatLedger b{font-size:11.5px; line-height:1.15; font-variant-numeric:tabular-nums}
+  #combatLedger span{font-size:8.5px; color:#5a5044; font-weight:800; margin-top:3px}
+  #combatLedger.danger{border-color:#8a1a14}
+  #combatLedger.danger #ledgerResult{color:#9a241c}
+  #combatLedger.safe{border-color:#245e38}
+  #combatLedger.safe #ledgerResult{color:#276c3d}
+  #battleCoach{display:grid; grid-template-columns:54px 1fr; align-items:center;
+    background:#21142a; border-color:#c99b3f; color:#f0e6d2; padding:4px 8px}
+  #battleCoach[hidden],#combatLedger[hidden]{display:none}
+  #coachStep{font-size:9px; letter-spacing:.08em; color:#d8b55c; font-weight:900; text-align:center;
+    border-right:1px solid #6e5220; align-self:stretch; display:flex; align-items:center; justify-content:center}
+  #battleCoach b{display:block; font-size:11px; color:#f0dc9e}
+  #battleCoach span{display:block; font-size:8.8px; line-height:1.35; color:#b9acc6; font-weight:800; margin-top:1px}
+  @keyframes focusbeat{50%{outline-color:#f0dc9e; filter:brightness(1.16)}}
+  #intentChip.coach-focus,#btnEnd.coach-focus{outline:3px solid #c99b3f; outline-offset:2px; animation:focusbeat .8s infinite}
+  #handArea.coach-focus .card{box-shadow:0 0 0 2px #c99b3f, 4px 4px 0 rgba(0,0,0,.55)}
   /* ---------- 손패 ---------- */
   #handArea{position:absolute; left:0; right:0; bottom:58px; height:166px; z-index:9}
   .card{
@@ -100,6 +125,15 @@
   .card .band{height:23px; display:flex; align-items:center; justify-content:center;
     font-size:10.5px; font-weight:900; color:#f0e6d0; text-shadow:0 1px 2px rgba(0,0,0,.5);
     padding-left:10px}
+  .card .kind{position:absolute; right:3px; top:4px; min-width:17px; height:15px; padding:0 3px;
+    display:flex; align-items:center; justify-content:center; background:#ece4d2; border:1px solid #1a1420;
+    color:#1a1420; font:900 8px/1 serif; text-shadow:none}
+  .card .rune{position:absolute; right:3px; top:27px; font:900 43px/1 serif; color:#20180e;
+    opacity:.07; pointer-events:none}
+  .card.attack{border-top-color:#8a1a14}
+  .card.guard{border-top-color:#245e38}
+  .card.ritual{border-top-color:#5a3a8a}
+  .card.bless{border-top-color:#8a6210}
   .card .cost{
     position:absolute; top:4px; left:4px; width:19px; height:19px; border-radius:50%;
     background:radial-gradient(circle at 35% 30%,#f0dc9e,#c99b3f); border:1px solid #6e5210;
@@ -195,6 +229,14 @@
   #gutBanner span{display:block; font-size:10px; letter-spacing:.5em; color:#8a7a9e; padding-left:.5em}
   #gutBanner b{display:block; font-size:29px; font-weight:900; letter-spacing:.18em; color:#c99b3f;
     text-shadow:0 0 26px currentColor; margin-top:2px}
+  #actionBanner{position:absolute; left:50%; top:198px; z-index:14; pointer-events:none;
+    min-width:124px; max-width:230px; padding:5px 12px 6px; text-align:center;
+    background:#ece4d2; border:2px solid #1a1420; outline:1px solid #1a1420; outline-offset:-5px;
+    color:#1a1420; opacity:0; transform:translate(-50%,8px) scale(.94);
+    transition:opacity .13s,transform .13s; box-shadow:4px 4px 0 rgba(0,0,0,.55)}
+  #actionBanner.on{opacity:1; transform:translate(-50%,0) scale(1)}
+  #actionBanner span{display:block; font-size:7.5px; letter-spacing:.18em; color:#6a5c50; font-weight:900}
+  #actionBanner b{display:block; margin-top:1px; font-size:12px; letter-spacing:.04em}
   .scrollfade{
     position:sticky; bottom:0; left:0; right:0; text-align:center;
     padding:26px 0 8px; pointer-events:none;
@@ -265,6 +307,22 @@
   #aHpI{background-color:#4fa86a}
   #energyOrb{border-radius:6px; box-shadow:3px 3px 0 rgba(0,0,0,.55)}
   .pile{border-radius:3px}
+  /* ---------- 시작 메뉴: 플레이 우선, 설정은 점진 공개 ---------- */
+  #titleOv{background:
+    linear-gradient(180deg,rgba(5,3,9,.35),rgba(9,5,14,.76) 42%,rgba(7,4,11,.97) 100%);
+    padding-top:10px}
+  #titleOv::before{content:''; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(90deg,transparent 49.4%,rgba(201,155,63,.10) 50%,transparent 50.6%)}
+  #titleOv>*{position:relative}
+  .title-top-space{height:13px}
+  #titleOv .title-sheet{margin-top:10px; padding:12px 13px 13px; background:rgba(20,13,30,.94)}
+  #titleOv .title-sheet button{min-height:38px}
+  #btnSettings[aria-expanded="true"]{border-color:var(--gold); color:#f0dc9e}
+  #titleSettings{display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px;
+    padding-top:8px; border-top:1px dashed #4b3a56}
+  #titleSettings[hidden]{display:none}
+  #titleSettings button{min-height:37px!important; margin-top:0!important; padding:7px 5px; font-size:10px; line-height:1.25}
+  #titleSettings #btnGeumje{grid-column:1/-1}
   /* ---------- 게임보이 전투창 (1세대 문법: 크림 창 + 이중 테두리) ---------- */
   .mbox{background:#ece4d2; border:2px solid #1a1420; color:#1a1420;
     outline:1px solid #1a1420; outline-offset:-5px; padding:8px 10px 9px}
@@ -283,10 +341,13 @@
   #botbar button.primary{background:#ece4d2; border-color:#1a1420; color:#1a1420; text-shadow:none}
   #botbar #btnGut.ready{background:linear-gradient(180deg,#f0dc9e,#c99b3f); color:#2e2000; border-color:#1a1420}
   .pile{background:#ece4d2; border:1.5px solid #1a1420; color:#4a4034}
-  .tchip{padding:9px 8px; font-size:11.5px}
+  .tchip{padding:7px 6px; font-size:10.5px}
   .card.sel{transform:translateY(-36px) scale(1.34) !important; z-index:99 !important;
     box-shadow:0 0 0 2px #c99b3f, 6px 10px 0 rgba(0,0,0,.55) !important}
-  @media (prefers-reduced-motion:reduce){ .mapnode.next{animation:none} #toast{transition:none} }
+  @media (prefers-reduced-motion:reduce){
+    .mapnode.next,#intentChip.coach-focus,#btnEnd.coach-focus{animation:none}
+    #toast,#actionBanner{transition:none}
+  }
 </style>
 
 <div id="frame">
@@ -309,7 +370,7 @@
     <div class="hpbar"><i id="eHpI"></i></div>
     <div class="strow" id="eSt"></div>
   </div>
-  <div id="intentChip" style="display:none">⚔ 8</div>
+  <div id="intentChip" role="button" tabindex="0" aria-label="귀신의 다음 수 자세히 보기" style="display:none">⚔ 8</div>
   <div class="mbox" id="allyBox" style="display:none">
     <div class="nrow"><span class="tdot" style="background:#c99b3f"></span><span>무당</span><span class="hpin" id="aHpT">80/80</span></div>
     <div class="hpbar"><i id="aHpI"></i></div>
@@ -319,6 +380,17 @@
   <div id="spiritBar">
     <div id="spiritChips"></div>
     <div id="auraTxt"></div>
+  </div>
+
+  <div id="combatRail">
+    <div id="combatLedger" aria-live="polite">
+      <div class="ledger-cell"><b id="ledgerIntent">다음 수 없음</b><span id="ledgerHits">귀신이 숨을 고른다</span></div>
+      <div class="ledger-cell"><b id="ledgerResult">체력 손실 없음</b><span id="ledgerBlock">방어 0</span></div>
+    </div>
+    <div id="battleCoach" hidden aria-live="polite">
+      <div id="coachStep">첫 굿판</div>
+      <div><b id="coachTitle">부적 살피기</b><span id="coachText">부적을 탭해 펼쳐 본다.</span></div>
+    </div>
   </div>
 
   <div id="handArea"></div>
@@ -331,23 +403,27 @@
   </div>
 
   <div id="gutBanner"><span>굿 거 리</span><b id="gutName">—</b></div>
+  <div id="actionBanner"><span id="actionKind">부적</span><b id="actionName">—</b></div>
   <div id="toast"></div>
 
   <div class="overlay" id="titleOv">
-    <div style="height:26px"></div>
+    <div class="title-top-space"></div>
     <div class="eyebrow">KOREAN SHAMAN HORROR DECKBUILDER</div>
     <h1 class="logo">萬神</h1>
     <div class="logosub">만 신</div>
     <p class="sub" style="margin-top:10px;color:#a89a88">네 밤의 진오기굿 —<br>죽은 것은 보내고, 산 것은 지킨다.</p>
-    <div class="sheet" style="margin-top:13px">
-      <button class="primary" id="btnCont" style="width:100%;font-size:15px;display:none">🕯 이어서 야행한다</button>
+    <div class="sheet title-sheet">
+      <button class="primary" id="btnCont" style="width:100%;font-size:15px;display:none">燈 이어서 야행한다</button>
+      <button class="primary" id="btnLearn" style="width:100%;margin-top:8px">初 처음 배우기 — 안내와 함께 첫 밤</button>
       <button id="btnNew" style="width:100%;margin-top:8px;font-size:14px">내림굿을 올린다 — 새 굿</button>
-      <button id="btnLearn" style="width:100%;margin-top:8px">🎓 처음 배우기 — 안내와 함께 첫 밤</button>
-      <button id="btnHelp" style="width:100%;margin-top:8px">📖 도움말 · 용어</button>
-      <button id="btnMute" style="width:100%;margin-top:8px">🔊 소리 켜짐</button>
-      <button id="btnFlash" style="width:100%;margin-top:8px">✴ 화면 번쩍임: 전체</button>
-      <button id="btnDiff" style="width:100%;margin-top:8px">⚖ 난이도: 본굿 (표준·추천)</button>
-      <button id="btnGeumje" style="width:100%;margin-top:8px;display:none">금제(禁制) 0</button>
+      <button id="btnHelp" style="width:100%;margin-top:8px">書 도움말 · 용어</button>
+      <button id="btnSettings" aria-expanded="false" style="width:100%;margin-top:8px">設 설정 · 난이도</button>
+      <div id="titleSettings" hidden>
+        <button id="btnMute">音 소리 켜짐</button>
+        <button id="btnFlash">光 화면 번쩍임: 전체</button>
+        <button id="btnDiff">衡 난이도: 본굿</button>
+        <button id="btnGeumje" style="display:none">금제(禁制) 0</button>
+      </div>
       <div class="sub" id="titleMeta" style="margin-top:9px"></div>
     </div>
   </div>
@@ -892,6 +968,7 @@ function gutFxOf(sp){
   return {fx:f,note};
 }
 function gearRar(id){return GEAR_RAR[id]||'c';}
+function gearPrice(id){return {c:35,u:45,r:60}[gearRar(id)];}   // 장터가 드래프트 희귀도 게이트를 언더컷하지 않게 (적대 검토)
 function deckCount(id){return deck.filter(c=>c.id===id).length;}
 function partyAxes(){const s=new Set();activeMembers().forEach(m=>(SPIRIT_AX[m.sp]||[]).forEach(a=>s.add(a)));return s;}
 function axOverlap(id){const pa=partyAxes();return (CARD_AX[id]||[]).filter(a=>pa.has(a)).length;}
@@ -1427,11 +1504,16 @@ function drawShaman(g,t){
   shadeR(g,-10+sway,-26,4,26,0.4);                    // 거친 세로 음영 덩어리
   shadeR(g,4+sway,-20,5,20,0.4);
   liteR(g,-14,-26,3,20,0.2);
+  // 허리에서 갈라지는 오방색 지전 — 작은 화면에서도 무당의 비대칭 실루엣을 만든다
+  blk(g,'#3f6a9e',-20+sway,-27,6,16);
+  blk(g,'#c99b3f',14-sway,-26,5,13);
+  blk(g,'#4f7a4a',18-sway,-24,4,9);
   // 저고리 몸통
   blk(g,'#c2b5a0',-10,-38,20,12);
   blk(g,'#f0e6d2',-8,-37,15,10);
   blk(g,'#8a2020',-3,-38,7,3);                        // 동정·깃
   blk(g,'#8a2020',-1,-35,3,6);
+  saekBand(g,-13,-29,26,4);                           // 굿판에서 읽히는 색동 허리띠
   // 왼팔 — 방울 지팡이
   blk(g,'#8a2020',-16,-42,7,10);
   saekBand(g,-17,-40,8,5);
@@ -1453,6 +1535,8 @@ function drawShaman(g,t){
   // 머리
   blk(g,'#161018',-11,-55,22,17);
   blk(g,'#161018',-6,-59,12,5);
+  blk(g,'#e0b44a',-14,-59,28,2);                      // 비녀 — 가로 실루엣 앵커
+  blk(g,'#c99b3f',11,-62,3,7);
   blk(g,'#8a2020',-2,-62,4,4);                        // 댕기
   blk(g,'#cfae8e',-9,-51,18,12);
   blk(g,'#f5e2c8',-8,-51,16,10);
@@ -2651,6 +2735,23 @@ function resetTips(){
   ['ms_tut','ms_tut2','ms_tut3'].forEach(k=>localStorage.removeItem(k));
   tutStep=0;
 }
+const COACH_TARGETS=['handArea','intentChip','btnEnd'];
+function clearCoachFocus(){COACH_TARGETS.forEach(id=>$(id).classList.remove('coach-focus'));}
+function hideBattleCoach(){
+  clearCoachFocus();
+  $('battleCoach').hidden=true;
+  $('combatLedger').hidden=false;
+}
+function showBattleCoach(step,title,body,target){
+  if(!inBattle||tutStep===99)return;
+  clearCoachFocus();
+  $('coachStep').textContent=step;
+  $('coachTitle').textContent=title;
+  $('coachText').textContent=body;
+  $('combatLedger').hidden=true;
+  $('battleCoach').hidden=false;
+  if(target)$(target).classList.add('coach-focus');
+}
 let gutTimer=0;
 function showGutBanner(name,col){
   $('gutName').textContent=name;
@@ -2658,6 +2759,16 @@ function showGutBanner(name,col){
   $('gutBanner').classList.add('on');
   clearTimeout(gutTimer);
   gutTimer=setTimeout(()=>$('gutBanner').classList.remove('on'),950);
+}
+let actionTimer=0;
+function showActionBanner(name,kind,col){
+  const b=$('actionBanner');
+  $('actionKind').textContent=kind||'부적';
+  $('actionName').textContent=name;
+  b.style.borderColor=col||'#1a1420';
+  b.classList.add('on');
+  clearTimeout(actionTimer);
+  actionTimer=setTimeout(()=>b.classList.remove('on'),620);
 }
 function spawnRibbons(){ // 오색 지전(紙錢)이 흩날린다
   for(let i=0;i<26;i++){
@@ -2720,6 +2831,49 @@ function statusChips(el,o){
   if(o.centi)add('백족');
   if(o.nextAtk>0)add('공수 +'+o.nextAtk);
   if(o.field)add('⚑ '+FIELDS[o.field].name);
+}
+// 전투 판단을 한 줄로 모은다. 의도 수치와 같은 calcIncomingHit()을 써서 표시=실행 파리티를 유지한다.
+function incomingForecast(){
+  if(!inBattle||!enemy||enemy.hp<=0)return {kind:'none',total:0,hpLoss:0};
+  if(enemy.skipTurn)return {kind:'skip',total:0,hpLoss:0};
+  if(enemy.field==='moonless')return {kind:'hidden',total:null,hpLoss:null};
+  const mv=enemy.pat[enemy.pi%enemy.pat.length];
+  let per=0, hits=1, kind='none';
+  if(mv.m!==undefined){per=calcIncomingHit(Math.max(6,Math.min(40,dmgTurnAcc))+enemy.str);kind='mirror';}
+  else if(mv.a!==undefined){per=calcIncomingHit(mv.a+enemy.str);hits=mv.h||1;kind='attack';}
+  const total=per*hits, pierce=!!mv.pc;
+  const guarded=pierce?0:Math.min(total,player.block||0);
+  return {kind,per,hits,total,pierce,guarded,hpLoss:Math.max(0,total-guarded)};
+}
+function updateCombatLedger(){
+  const rail=$('combatRail'), led=$('combatLedger'), end=$('btnEnd');
+  if(!inBattle||!enemy||enemy.hp<=0){rail.style.display='none';end.textContent='턴 종료';return;}
+  rail.style.display='block';
+  const f=incomingForecast();
+  led.classList.remove('danger'); led.classList.remove('safe');
+  if(f.kind==='hidden'){
+    $('ledgerIntent').textContent='다음 피해 ?'; $('ledgerHits').textContent='그믐밤 — 수치가 가려졌다';
+    $('ledgerResult').textContent='소리와 종류로 판단'; $('ledgerBlock').textContent='현재 방어 '+(player.block||0);
+    end.textContent='턴 종료'; return;
+  }
+  if(f.kind==='skip'){
+    led.classList.add('safe');
+    $('ledgerIntent').textContent='다음 공격 없음'; $('ledgerHits').textContent='귀신의 수가 넘어간다';
+    $('ledgerResult').textContent='체력 손실 없음'; $('ledgerBlock').textContent='방어를 아낄 수 있다';
+    end.textContent='턴 종료 · 안전'; return;
+  }
+  if(!f.total){
+    led.classList.add('safe');
+    $('ledgerIntent').textContent='직접 피해 없음'; $('ledgerHits').textContent='강화·방해 수를 준비한다';
+    $('ledgerResult').textContent='체력 손실 없음'; $('ledgerBlock').textContent='현재 방어 '+(player.block||0);
+    end.textContent='턴 종료'; return;
+  }
+  led.classList.add(f.hpLoss?'danger':'safe');
+  $('ledgerIntent').textContent=(f.kind==='mirror'?'거울 피해 ':'다음 피해 ')+f.total;
+  $('ledgerHits').textContent=(f.hits>1?f.per+' × '+f.hits+'타':'한 번에 '+f.per)+(f.pierce?' · 관통':'');
+  $('ledgerResult').textContent=f.hpLoss?'체력 −'+f.hpLoss:'전부 막음';
+  $('ledgerBlock').textContent=f.pierce?'방어 무시':('현재 방어 '+(player.block||0)+' · 흡수 '+f.guarded);
+  end.textContent='턴 종료'+(f.hpLoss?' · −'+f.hpLoss:' · 안전');
 }
 function renderRelics(){
   const bar=$('relicBar'); bar.innerHTML='';
@@ -2802,8 +2956,9 @@ function updateHUD(){
 }
 function updateIntent(){
   const chip=$('intentChip');
-  if(!inBattle||!enemy||enemy.hp<=0){chip.style.display='none';return;}
+  if(!inBattle||!enemy||enemy.hp<=0){chip.style.display='none';updateCombatLedger();return;}
   chip.style.display='block';
+  if(enemy.skipTurn){chip.textContent='▶ 쿵 — 다음 수가 넘어간다';chip.classList.add('calm');updateCombatLedger();return;}   // 씨름: 표시=실제(condBonus) 파리티
   if(enemy.field==='moonless'){
     // 그믐밤: 수의 '종류'만 어렴풋이 보인다 (수치 은폐)
     const mv0=enemy.pat[enemy.pi%enemy.pat.length];
@@ -2813,7 +2968,7 @@ function updateIntent(){
     if(mv0.s!==undefined||mv0.g!==undefined)hints.push('↑?');
     if(mv0.d!==undefined||mv0.w!==undefined||mv0.c!==undefined||mv0.f!==undefined)hints.push('☠?');
     chip.textContent='▶ '+(hints.join(' ')||'？？？');
-    chip.classList.add('calm');return;
+    chip.classList.add('calm');updateCombatLedger();return;
   }
   const mv=enemy.pat[enemy.pi%enemy.pat.length];
   const parts=[]; let hot=false;
@@ -2830,6 +2985,7 @@ function updateIntent(){
   if(mv.g!==undefined)parts.push('✚ '+mv.g);
   chip.textContent='▶ '+parts.join(' ');
   chip.classList.toggle('calm',!hot);
+  updateCombatLedger();
 }
 
 // ---------- 의도 상세 ----------
@@ -2983,6 +3139,14 @@ async function castGut(){
 $('btnGut').addEventListener('click',castGut);
 
 // ---------- 손패 ----------
+function cardVisualKind(d,v){
+  if(d.curse)return {cls:'curse',mark:'祟',label:'동티'};
+  if(v.dmg||v.dmgPerSpirit||v.xDmg||v.comboDmg||v.blockDmg)return {cls:'attack',mark:'殺',label:'공격'};
+  if(v.power)return {cls:'ritual',mark:'陣',label:'지속'};
+  if(v.heal||v.cleanse)return {cls:'bless',mark:'生',label:'회복'};
+  if(v.block||v.xBlock)return {cls:'guard',mark:'守',label:'방어'};
+  return {cls:'ritual',mark:'術',label:'술법'};
+}
 function renderHand(){
   const area=$('handArea'); area.innerHTML='';
   const n=hand.length;
@@ -2994,8 +3158,10 @@ function renderHand(){
     const el=document.createElement('div');
     const curse=!!d.curse;
     const dis=curse?false:(d.xcost?energy<1:c>energy);
-    el.className='card'+(curse?' curse':(dis?' dis':''))+(selCard===inst.uid?' sel':'');
+    const vk=cardVisualKind(d,v);
+    el.className='card '+vk.cls+(curse?' curse':(dis?' dis':''))+(selCard===inst.uid?' sel':'');
     el.setAttribute('role','button'); el.tabIndex=0;
+    el.setAttribute('aria-label',d.name+' · '+vk.label+' · 신력 '+(d.xcost?'X':c)+' · '+cardDesc(v,curse,d));
     const mid=(n-1)/2, rot=(i-mid)*3.2, dy=Math.abs(i-mid)*3.5;
     el.style.left=(x0+i*spread)+'px';
     el.style.top=(13+dy)+'px';
@@ -3006,20 +3172,26 @@ function renderHand(){
     const bandCol=curse?'#2a2036':(inst.owner?SPIRITS[inst.owner].col:'#6e5220');
     el.innerHTML=
       '<div class="band" style="background:'+bandCol+'">'+d.name+(up?'+':'')+'</div>'+
+      '<div class="kind">'+vk.mark+'</div><div class="rune">'+vk.mark+'</div>'+
       '<div class="cost">'+(curse?'✕':(d.xcost?'X':c))+'</div>'+
       '<div class="body">'+cardDesc(v,curse,d)+(inst.ramp?'<br><b style="color:#8a2020">담금질 +'+inst.ramp+'</b>':'')+'</div>'+
       '<div class="seal"></div>'+
       '<div class="owner">'+ownerName+'</div>';
-    el.addEventListener('click',()=>{
+    const activate=()=>{
       if(curse){playCard(inst,el);return;}                 // 동티는 탭 즉시 안내
       if(selCard!==inst.uid){                              // 첫 탭: 확대
         selCard=inst.uid; renderHand(); snd.tap();
-        if(tutStep===1){tutStep=2;toast('👆 한 번 더 탭하면 사용한다!',true);}
+        if(tutStep===1){
+          tutStep=2;
+          showBattleCoach('1 / 3','부적 사용하기','펼친 부적을 한 번 더 탭하면 신력을 내고 사용한다.','handArea');
+        }
         return;
       }
       selCard=null;                                        // 두 번째 탭: 사용
       playCard(inst,el);
-    });
+    };
+    el.addEventListener('click',activate);
+    el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){if(e.preventDefault)e.preventDefault();activate();}});
     area.appendChild(el);
   });
 }
@@ -3114,7 +3286,11 @@ function condBonus(v){
     case 'enemyBlock':return enemy&&enemy.block>0?c.bonus:0;
     case 'myBlock3':return Math.min(c.bonus,Math.floor(player.block/3));              // 지닌 방어 3당 +1
     case 'enemyWeak':return enemy&&enemy.weak>0?c.bonus:0;
-    case 'intentAtk':return enemy&&!enemy.skipTurn&&enemy.pat[enemy.pi%enemy.pat.length].a!==undefined?c.bonus:0;   // 의도는 상시 공개 정보
+    case 'intentAtk':{   // 의도는 상시 공개 정보. 거울 수(m)도 들어오는 공격이다 — 의도 칩 표기와 동일 판정
+      if(!enemy||enemy.skipTurn)return 0;
+      const mv=enemy.pat[enemy.pi%enemy.pat.length];
+      return (mv.a!==undefined||mv.m!==undefined)?c.bonus:0;
+    }
     case 'firstAtk':return !player.turnAtk?c.bonus:0;
     case 'enemyHan':return enemy&&enemy.han>0?c.bonus:0;
     case 'myBlock5':return player.block>=5?c.bonus:0;
@@ -3144,8 +3320,11 @@ function gainStr(n){
 }
 // 恨 상한: 일반 18 / 정예·보스 24 — 곱연산 폭주 방지
 function hanCap(){return enemy&&(enemy.boss||enemy.elite)?24:18;}
+// 개전 恨 공유 예산 — startBattle 개전 구간에서만 ≥0 (v0.9 적대 검토: 합·강화·보온의 healPlayer 훅 포함 "모든" 개전 소스가 공유해야 함)
+let openHanLeft=-1;
 function gainHan(n){
   if(!enemy||enemy.hp<=0)return 0;
+  if(openHanLeft>=0){n=Math.min(n,openHanLeft);openHanLeft-=n;}
   const before=enemy.han;
   enemy.han=Math.min(hanCap(),enemy.han+n);
   return enemy.han-before;
@@ -3206,6 +3385,8 @@ async function playCard(inst,el){
   if(d.xcost&&energy<1){toast('바칠 신력이 없다');snd.tap();return;}
   if(c>energy){toast('신력(神力)이 부족하다!');snd.tap();return;}
   const xVal=d.xcost?energy:0;
+  const visual=cardVisualKind(d,v);
+  showActionBanner(d.name+(isUp(inst)?'+':''),visual.label,inst.owner?SPIRITS[inst.owner].col:'#8a6210');
   busy=true; energy-=c; firstCardPlayed=true; cardsPlayed++; turnCardCount++; battleFirstCardUsed=true;
   if(swapDiscountLeft>0){swapDiscountLeft=0;twinbellTurnUsed=true;}   // 쌍방울 할인은 전환 직후 첫 카드에 소진
   if(hasBoon('byeolgapju'))player.block+=1;
@@ -3363,7 +3544,7 @@ async function playCard(inst,el){
     if(!drawPile.length&&discard.length){drawPile=shuffleA(discard.slice());discard=[];}
     const top=drawPile[drawPile.length-1];
     if(top){
-      const tv=cardVals(top), isAtk=!!(tv.dmg||tv.xDmg||tv.comboDmg||tv.blockDmg);
+      const tv=cardVals(top), isAtk=!!(tv.dmg||tv.dmgPerSpirit||tv.xDmg||tv.comboDmg||tv.blockDmg);   // playCard isAttack 판정과 동일 어휘
       toast('천기: 「'+CARDS[top.id].name+'」 — '+(isAtk?'살(殺)의 기운, 공수 +'+v.peekAtk:'드로우 1'),true);
       if(isAtk){player.nextAtk+=v.peekAtk;float2(SHAMAN_POS[0],SHAMAN_POS[1]-90,'공수 +'+v.peekAtk,'#c99b3f');}
       else drawCards(1);
@@ -3383,7 +3564,11 @@ async function playCard(inst,el){
   updateHUD(); renderHand();
   await sleep(170);
   if(enemy.hp<=0){await winBattle();return;}
-  if(tutStep===2){tutStep=3;setTimeout(()=>tip('intent','⚔ 귀신 아래 붉은 칩이 다음 수다 — 막거나 어긋내라'),600);}
+  if(tutStep===2){
+    tutStep=3;
+    localStorage.setItem('ms_tip_intent','1');
+    showBattleCoach('2 / 3','귀신 수 읽기','붉은 「다음 수」를 탭해 예상 피해와 효과를 확인한다.','intentChip');
+  }
   busy=false; updateGutBtn();
 }
 
@@ -3392,7 +3577,9 @@ async function endTurn(){
   if(!inBattle||busy)return;
   rsBattleTurns++;                       // 가드 뒤 — busy 중 재탭은 통계에 안 잡힌다
   selCard=null;
-  if(tutStep===3){tutStep=99;localStorage.setItem('ms_tut','1');}
+  if(tutStep===3||tutStep===4){
+    tutStep=99; localStorage.setItem('ms_tut','1'); hideBattleCoach();
+  }
   busy=true; snd.drum();
   if(auraId()==='endBlock4'){player.block+=4;float2(SHAMAN_POS[0],SHAMAN_POS[1]-70,'용린 +4','#3f6a9e');}
   if(hasBoon('sanjeonggi'))healPlayer(2);
@@ -3615,17 +3802,18 @@ function startBattle(sp,opts){
     const bmsg='명복이 함께한다 (+방어'+dprof().blessBlock+(dprof().blessStr?' 힘'+dprof().blessStr:'')+')';
     setTimeout(()=>float2(SHAMAN_POS[0],SHAMAN_POS[1]-98,bmsg,'#c99b3f',true),900);
   }
-  // 개전 恨 공유 예산 6 (적대 검토 처방: 합·강화·강화 적층이 '카드 0장 자동승'을 만들지 않게 — 모든 개전 恨 소스가 공유)
-  let openHanLeft=6, hapDraw=0;
-  const gainHanOpen=n=>{const got=Math.min(n,openHanLeft);openHanLeft-=got;return got>0?gainHan(got):0;};
+  // 개전 恨 공유 예산 6 (적대 검토 처방: '카드 0장 자동승' 차단) — gainHan 자체가 예산을 소비하므로
+  // 길잡이·점지·합은 물론 healPlayer 훅(꽃값·삼신끈)까지 개전 구간의 모든 恨 소스가 잡힌다
+  openHanLeft=6;
+  let hapDraw=0;
   boonFirstAtkLeft=hasBoon('seonbong')?1:0;
   if(hasBoon('gunjin'))player.block+=6;
-  if(hasBoon('giljabi'))gainHanOpen(2);
+  if(hasBoon('giljabi'))gainHan(2);
   if(hasBoon('heonhwa'))healPlayer(6);
   if(hasBoon('gipeunso'))player.block+=6;
   if(hasBoon('bawideung'))player.block+=5;
   if(hasBoon('horangi')){const sv=gainStr(1);float2(SHAMAN_POS[0],SHAMAN_POS[1]-96,'호랑이 걸음 힘 +'+sv,'#c99b3f');}
-  if(hasBoon('jeomji')){healPlayer(5);gainHanOpen(2);}
+  if(hasBoon('jeomji')){healPlayer(5);gainHan(2);}
   if(hasRelic('mirrorR')){player.block+=8;}
   if(hasRelic('salt'))enemy.weak+=2;
   if(hasRelic('tigereye'))gainStr(1);
@@ -3635,7 +3823,7 @@ function startBattle(sp,opts){
     hapState().forEach(h=>{
       const tag=h.big?'대합':'소합';
       switch(h.ax){
-        case 'han':{const got=gainHanOpen(h.big?4:2);if(got)hapMsgs.push(tag+' 恨 +'+got);break;}
+        case 'han':{const got=gainHan(h.big?4:2);if(got)hapMsgs.push(tag+' 恨 +'+got);break;}
         case 'block':{const b=h.big?6:3;player.block+=b;hapMsgs.push(tag+' 방어 +'+b);break;}
         case 'heal':{healPlayer(h.big?5:3);hapMsgs.push(tag+' 회복 '+(h.big?5:3));break;}
         case 'engine':{hapDraw+=1;hapMsgs.push(tag+' 드로우 +1');break;}
@@ -3645,6 +3833,7 @@ function startBattle(sp,opts){
     });
     if(hapMsgs.length)setTimeout(()=>toast('⚭ 합(合)이 맞는다 — '+hapMsgs.join(' · '),true),1100);
   }
+  openHanLeft=-1;   // 개전 구간 종료 — 이후 전투 중 恨은 예산 무관
   startDrone();
   if(opts.boss||opts.elite)snd.stinger(); else snd.ehit();
   toast((opts.boss?'…무언가 온다. ':opts.elite?'흉흉한 기운 — ':'')+S.name+josa(S.name,'이','가')+' 나타났다');
@@ -3655,7 +3844,8 @@ function startBattle(sp,opts){
   updateHUD(); renderSpiritBar();
   if(act===0&&depth===0&&tutStep===0){
     tutStep=1;
-    setTimeout(()=>tip('card_play','👆 카드를 탭해 살펴보고, 한 번 더 탭해 사용한다'),2000);
+    localStorage.setItem('ms_tip_card_play','1');
+    setTimeout(()=>showBattleCoach('1 / 3','부적 살피기','손의 부적을 한 번 탭해 펼쳐 보고, 비용과 효과를 읽는다.','handArea'),850);
   }
   if(party.length>1&&!tipSeen('lineup_channel')){   // 강신은 바꿀 신령이 생겼을 때 가르친다
     setTimeout(()=>tip('lineup_channel','🔮 아래 신단의 신령을 탭하면 신력 1로 빙의(강신)를 바꾼다 — 빙의 효과(신기)가 통째로 바뀐다'),2200);
@@ -3669,6 +3859,9 @@ function exitBattleUI(){
   $('botbar').style.display='none';
   $('intentChip').style.display='none';
   $('spiritBar').style.display='none';
+  $('combatRail').style.display='none';
+  hideBattleCoach();
+  $('actionBanner').classList.remove('on');
   $('handArea').innerHTML='';
 }
 function gainRandomRelic(){
@@ -3958,9 +4151,7 @@ function openPick(mode,ret){
     b.innerHTML='<div class="pv" style="color:#e0b44a">🖌</div><div class="tx"><b>무구 일습에 치성</b>'+
       '<span>무소속 부적 2장을 골라 강화한다 (강화 가능 '+gearTemperCands().length+'장)</span></div>';
     b.addEventListener('click',()=>{
-      if(runStats)runStats.chiseong++;
-      rsReward('chiseong','gear');
-      hide('pickOv'); openGearTemper('chiseong',2);
+      hide('pickOv'); openGearTemper('chiseong',2);   // 계측 기록은 첫 획 확정 시점 (취소 시 유령 기록 방지)
     });
     list.appendChild(b);
   }
@@ -4004,7 +4195,7 @@ function renderShop(){
     opts.appendChild(b);
   };
   shopStock.gears.forEach(id=>{
-    offer('📜','부적 「'+CARDS[id].name+rarMark(id)+'」',axChipsTxt(id)+cardDesc(cardVals({id}),false,CARDS[id]),35,()=>{
+    offer('📜','부적 「'+CARDS[id].name+rarMark(id)+'」',axChipsTxt(id)+cardDesc(cardVals({id}),false,CARDS[id]),gearPrice(id),()=>{
       addCard(id,null); shopStock.gears=shopStock.gears.filter(x=>x!==id);
       toast('「'+CARDS[id].name+'」'+josa(CARDS[id].name,'을','를')+' 샀다'); snd.jingle(); renderShop();
     });
@@ -4086,10 +4277,10 @@ $('btnBurnCancel').addEventListener('click',()=>{
 });
 
 // ---------- 주사(朱砂) 덧칠 — 무소속 무구 강화 (v0.9, isUp 개통의 획득 접점) ----------
-let temperMode='shop', temperLeft=1;
+let temperMode='shop', temperLeft=1, temperRecorded=false;
 function gearTemperCands(){return deck.filter(c=>!c.owner&&!isUp(c)&&!CARDS[c.id].curse);}
 function openGearTemper(mode,count){
-  temperMode=mode; temperLeft=count; burnKind='temper';
+  temperMode=mode; temperLeft=count; burnKind='temper'; temperRecorded=false;
   renderTemperList();
 }
 function renderTemperList(){
@@ -4103,6 +4294,11 @@ function renderTemperList(){
       '<div class="b2">'+cardDesc(cardVals(inst),false,d)+'<br><b style="color:#e0b44a">강화 후:</b> '+cardDesc(uv,false,d)+'</div>';
     el.addEventListener('click',()=>{
       inst.up=true; snd.gong();
+      if(temperMode==='chiseong'&&!temperRecorded){   // 첫 획 확정 시점에 1회 기록 — 신령 치성과 대칭
+        temperRecorded=true;
+        if(runStats)runStats.chiseong++;
+        rsReward('chiseong','gear');
+      }
       toast('「'+d.name+'」에 핏빛 획이 더해졌다',true);
       temperLeft--;
       if(temperLeft>0&&gearTemperCands().length)renderTemperList();
@@ -4182,6 +4378,7 @@ let exhaustPile=[], battleSelfAcc=0, sacTurnGained=false;   // v0.8: 소멸 더�
 let swapSinTurn=false, gutSwapFree=false, swapDiscountLeft=0, twinbellTurnUsed=false;   // v0.8 강신 댄스: 여흥 턴당 1회 / 맞이굿 무료 전환 / 쌍방울 할인
 let battleHealTotal=0, turnHealed=false, turnAtkCards=0;   // v0.9: 전투 누적 회복(명줄 당기기) / 이번 턴 회복 여부(보은) / 턴 공격 카드 수(낙인화로)
 function initRunStats(){
+  rareLuck=0.15;   // pity는 런 귀속 — 새 굿에서 이전 런의 누적이 새면 계측(레어 제시율)도 오염된다
   runStats={v:3,diff:diffMode,bodyGod:party[0]?party[0].sp:null,ts:Date.now(),
     acts:{0:{startHP:teamHP,startMax:teamMax}},dmgTaken:0,outHeal:0,battles:0,turns:0,paths:{},
     chiseong:0,deathAct:null,win:null,

@@ -81,6 +81,11 @@ const test=`
     assert.equal(player.nextAtk,0,'덱탑 비공격 — 공수 없음');
     assert.equal(hand.length,h0+1,'대신 드로우 1 (헬퍼가 넣은 1장은 내며 상쇄, 드로우로 +1)');
     assert.equal(drawPile.length,0,'공개한 덱탑을 뽑아왔다');
+    player.nextAtk=0;
+    drawPile=[{uid:uidSeq++,id:'sinjangdae',owner:null}];
+    await play('cheongi');
+    assert.equal(player.nextAtk,6,'신장대(dmgPerSpirit)도 공격 부적으로 분류 — 적대 검증 회귀');
+    player.nextAtk=0;
     console.log('[신규] 명줄 당기기·낙인화로·천기누설 OK');
     // ---- 3) 오라 전환 3건 ----
     assert.equal(SPIRITS.mongdal.aura.id,'sadSong');
@@ -101,7 +106,18 @@ const test=`
     e1=enemy.hp;
     await endTurn(); await sleep(300);
     assert.equal(e1-enemy.hp,5,'쇠먹기 캡 5');
-    console.log('[오라] 서러운 곡·쇠먹기(캡·이월 제외)·보은(smoke8) OK');
+    // 보은 산신 몸주 +5 분기
+    setChannel('myogwi',true);
+    party[0].sp='sansin'; turnHealed=true; player.turnAtk=false; player.str=0;
+    assert.equal(await play('bujeok'),11,'보은: 산신 몸주 시 +5');
+    party[0].sp='janggun';
+    // 쇠먹기 막타 → 턴 시작 중 winBattle 경로 무예외
+    setChannel('bulgasari',true);
+    enemy.hp=3; enemy.han=0; player.block=27; enemy.pi=0; busy=false;
+    await endTurn(); await sleep(500);
+    assert.ok(enemy.hp<=0,'쇠먹기가 막타를 낸다');
+    assert.equal(inBattle,false,'턴 시작 중 승리 처리 완료');
+    console.log('[오라] 서러운 곡·쇠먹기(캡·이월 제외·막타 승리)·보은(+산신 분기) OK');
     // 신규 카드 u: 완비
     assert.equal(cardVals({id:'mjdanggi',up:true}).healSyn,12);
     assert.equal(cardVals({id:'nakinhwaro',up:true}).power.v,2);
