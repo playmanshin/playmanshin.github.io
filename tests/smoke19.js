@@ -34,6 +34,7 @@ const test=`
     act=0; assert.ok(!riskTags('imugi').includes('흡혈'),'1막 이무기: 흡혈 없음');
     act=3; assert.ok(riskTags('imugi').includes('흡혈'),'4막 이무기: 흡혈 예고');
     assert.ok(riskTags('samokgu').includes('관통'),'4막 삼목구: 관통 예고');
+    assert.ok(riskTags('imugi').includes('한(恨)'),'4막 이무기: 한(恨) 예고');
     assert.ok(riskTags('bulgasari').includes('반사'),'4막 불가사리: 반사 예고');
     console.log('[태그동기화] OK');
     // 3) 구미호 2페이즈: 전용 패턴 교체 + 의도 즉시 갱신 + pi 리셋
@@ -62,6 +63,16 @@ const test=`
     assert.deepEqual(enemy.pat.filter(m=>m.h).map(m=>m.h),h1v,'급증은 1회만');
     inBattle=false; stopDrone();
     console.log('[지네각시] 50% 백족 급증 OK');
+    // 5) 투사체(부적) 공격의 페이즈 전환도 접촉 시점 — 닿기 전엔 변신하지 않는다
+    act=3; startBattle('gumiho',{boss:true});
+    enemy.armor=0; enemy.block=0; fxAnims.length=0;
+    dmgEnemy(Math.ceil(enemy.max*0.55),'#fff',true,true,'talisman');
+    assert.equal(enemy.phase2,false,'부적 도착 전엔 변신 없음');
+    const pfx=fxAnims[fxAnims.length-1];
+    const cb2=pfx.onContact; pfx.onContact=null; cb2();
+    assert.equal(enemy.phase2,true,'접촉 시점에 변신');
+    inBattle=false; stopDrone();
+    console.log('[투사체페이즈] 접촉 시점 전환 OK');
     console.log('SMOKE_OK');
     process.exit(0);
   }catch(err){console.error('SMOKE_FAIL',err);process.exit(1);}

@@ -65,6 +65,49 @@ const test=`
     inBattle=false; sinmyeong=0; updateGutBtn();
     assert.ok(document.getElementById('btnGut').textContent.includes('신명'));
     console.log('[이중표기] 필살굿/신명 OK');
+    // 6) 드래프트 없는 승리 경로: showReward 진입만으로 전투 상태가 정리된다
+    party=[{sp:'janggun',lv:1,wh:0,active:true}];
+    teamMax=100; teamHP=40; player={block:0,str:0,weak:0,han:0};
+    channeled=Object.keys(SPIRITS).find(s=>SPIRITS[s].aura&&SPIRITS[s].aura.id==='healBlock')||null;
+    inBattle=true; enemy={sp:'yeommae',hp:0,max:26};
+    runStats.outHeal=0;
+    showReward();
+    assert.equal(inBattle,false,'보상 진입 시 exitBattleUI');
+    const blk=player.block;
+    healPlayer(10);
+    assert.equal(player.block,blk,'전투 신기(포대기)가 보상 회복에 발동하지 않음');
+    assert.ok(runStats.outHeal>=10,'보상 회복이 전투 외 회복으로 계측');
+    console.log('[전투정리] showReward=exitBattleUI OK');
+    // 7) 계측 정확성: busy 재탭 무시·패배 전투 기록
+    rsBattleTurns=0; inBattle=true; busy=true; endTurn();
+    assert.equal(rsBattleTurns,0,'busy 중 턴 종료 재탭은 카운트 불변');
+    busy=false; inBattle=false; endTurn();
+    assert.equal(rsBattleTurns,0,'전투 밖 호출 무시');
+    const b0=runStats.battles, t0=runStats.turns;
+    inBattle=true; enemy={rev:false,sp:'dalgyal'}; player.revive=false; player.nineUsed=true; channeled=null;
+    rsBattleTurns=2; teamHP=0;
+    defeat();
+    assert.equal(runStats.battles,b0+1,'패배한 마지막 전투도 계측');
+    assert.equal(runStats.turns,t0+3,'패배 전투 턴 수(2+진행 중 1) 기록');
+    assert.equal(runStats.win,false); assert.equal(runStats.deathAct,act);
+    console.log('[계측정확성] busy 가드·패배 기록 OK');
+    // 8) 미리보기 = 실제 적용 (teamMax 86 본굿 경계, 금제 동티 포함)
+    diffMode='bongut'; teamMax=86; teamHP=40; relics=[];
+    const ap=sendApply();
+    assert.equal(ap.heal,Math.round(88*0.2),'천도 회복은 최대체력 증가 후 기준(18)');
+    assert.ok(sendPreviewTxt().includes('체력 40→'+ap.after),'미리보기=적용');
+    localStorage.setItem('ms_geumje','1');
+    assert.equal(battleCurseCount(4),2,'원한4 동티1 + 금제1 = 2');
+    localStorage.setItem('ms_geumje','0');
+    console.log('[미리보기일치] 천도/금제 동티 OK');
+    // 9) 이야기 난이도에서는 금제 버튼 숨김 (UI=규칙)
+    localStorage.setItem('ms_wins','1');
+    diffMode='story'; updateGeumjeBtn();
+    assert.equal(document.getElementById('btnGeumje').style.display,'none');
+    diffMode='bongut'; updateGeumjeBtn();
+    assert.equal(document.getElementById('btnGeumje').style.display,'block');
+    localStorage.setItem('ms_wins','0');
+    console.log('[금제게이트UI] OK');
     inBattle=false; stopDrone();
     console.log('SMOKE_OK');
     process.exit(0);

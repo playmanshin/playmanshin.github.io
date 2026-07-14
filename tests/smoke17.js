@@ -39,12 +39,14 @@ const test=`
     // 3) 위험 태그 유도
     const tg=sp=>riskTags(sp);
     assert.ok(tg('jangsanbeom').includes('거울')&&tg('jangsanbeom').includes('성장'));
-    assert.ok(tg('jeoseungsaja').includes('관통')&&tg('jeoseungsaja').includes('저주'));
+    assert.ok(tg('jeoseungsaja').includes('관통')&&tg('jeoseungsaja').includes('동티'),'c는 동티 태그');
     assert.ok(tg('bulgasari').includes('철갑'));
     assert.ok(tg('songaksi').includes('반사'));
     assert.ok(tg('geusundae').includes('성장'),'escalate → 성장');
     assert.ok(tg('jineegaksi').includes('연타'),'centi → 연타');
-    assert.ok(tg('mulgwisin').includes('연타')&&tg('mulgwisin').includes('저주'));
+    assert.ok(tg('mulgwisin').includes('연타')&&tg('mulgwisin').includes('한(恨)'),'d는 한(恨) 태그');
+    assert.ok(tg('cheonyeo').includes('약화'),'w는 약화 태그');
+    assert.ok(!tg('mulgwisin').includes('저주'),'뭉뚱그린 저주 태그 없음');
     assert.ok(riskTags('cheonyeo','hungry').includes('흡혈'),'변종 굶주림 → 흡혈');
     console.log('[위험태그] 8종 유도 OK');
     // 4) 확정 버튼 경로로만 chooseNode
