@@ -41,19 +41,22 @@ const test=`
     teamMax=80; teamHP=50; act=0; depth=0; coins=50;
     genMap();
     const fields=mapRows.flat().filter(n=>n.field).length;
-    console.log('[지도] 1막 판효과 노드='+fields+' (0 기대: 1막은 없음)');
+    console.log('[지도] 1막 판효과 노드='+fields);
+    assert.equal(fields,0);
     // 포대기 검증
     startBattle('jangseung');
     await sleep(950);
     const blk0=player.block;
     healPlayer(5);
-    console.log('[포대기] 회복 후 방어 '+blk0+'→'+player.block+' (+2 기대)');
+    console.log('[포대기] 방어 '+blk0+'→'+player.block);
+    assert.equal(player.block,blk0+2);
     // 장승의 겁(怯): 신명 드레인
     sinmyeong=4;
     enemy.pi=2; // {f:2} 차례로
     await endTurn();
     await sleep(150);
-    console.log('[공포] 신명='+sinmyeong+' (겁2 맞으면 4-2+카드0=2~3대)');
+    console.log('[공포] 신명='+sinmyeong);
+    assert.equal(sinmyeong,2);   // 4 − 겁2
     inBattle=false; stopDrone();
     // 철갑: 불가사리
     act=2; depth=14;
@@ -69,7 +72,8 @@ const test=`
     // 恨은 관통
     enemy.han=5; const hp2=enemy.hp;
     await endTurn(); await sleep(150);
-    console.log('[철갑관통] 恨틱 '+(hp2-enemy.hp>=5?'관통OK':'실패! '+(hp2-enemy.hp)));
+    assert.ok(hp2-enemy.hp>=5,'恨이 철갑을 관통해야 한다');
+    console.log('[철갑관통] OK');
     inBattle=false; stopDrone();
     // 핏빛 달 판효과
     startBattle('imugi',{field:'bloodmoon'});
@@ -87,8 +91,10 @@ const test=`
     const h0=enemy.pat[0].h;
     for(let i=0;i<4;i++){enemy.pi++;}
     enemy.pi=enemy.pat.length; // 사이클 경계 흉내: endTurn에서 wrap 체크
-    console.log('[백족] 초기 h='+h0+' (전투 중 사이클마다 +1, 상한6)');
-    console.log('[스케일] 지네각시 HP='+enemy.max+' (기대 ~135±10)');
+    console.log('[백족] 초기 h='+h0);
+    assert.equal(h0,2);
+    console.log('[스케일] 지네각시 HP='+enemy.max);
+    assert.ok(Math.abs(enemy.max-136)<=10,'스케일 테이블 이탈: '+enemy.max);
     inBattle=false; stopDrone();
     // 묘귀 아홉 목숨
     party.push({sp:'myogwi',lv:1,wh:2});
