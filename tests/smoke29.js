@@ -73,6 +73,10 @@ const test=`
     const html=require('fs').readFileSync(__dirname+'/../index.html','utf8');
     const bar=html.slice(html.indexOf('<div id="spiritBar">'),html.indexOf('</div>',html.indexOf('<div id="spiritBar">'))+6);
     assert.ok(html.indexOf('id="auraTxt"')<html.indexOf('id="spiritChips"'),'auraTxt가 칩보다 먼저 (겹침 방지 배치)');
+    // 신단 바 고정 높이 금지 — 내용이 바를 넘치면 flex가 자식을 쥐어짜 겹침이 재발한다 (v10.13.1 회귀)
+    const sbCss=html.match(/#spiritBar\\{[^}]*\\}/s)[0];
+    assert.ok(!/height\\s*:/.test(sbCss),'spiritBar는 auto 높이');
+    assert.ok(/flex:none/.test(html.match(/#auraTxt\\{[^}]*\\}/s)[0]),'auraTxt 축소 금지');
     inBattle=false; stopDrone();
     console.log('SMOKE_OK');
     process.exit(0);
