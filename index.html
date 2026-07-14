@@ -340,20 +340,49 @@
     <div class="logosub">만 신</div>
     <p class="sub" style="margin-top:10px;color:#a89a88">네 밤의 진오기굿 —<br>죽은 것은 보내고, 산 것은 지킨다.</p>
     <div class="sheet" style="margin-top:13px">
-      <div style="font-size:11.5px;font-weight:800;line-height:1.8">
-        🔮 <b>강신</b> — 기력 1로 빙의를 갈아타며 신기를 바꾼다<br>
-        🩸 <b>봉인</b> — 이긴 귀신의 신기·굿거리·카드 3장을 얻는다. 단 <b>출전은 몸주신+2위</b>, 나머지는 신단에 대기<br>
-        🃏 <b>동티</b> — 원한 4마다 저주 1장이 매 전투 덱에 스며든다<br>
-        🕯 <b>천도</b> — 보내주면 회복과 명복(다음 전투 축복)이 남는다<br>
-        📿 <b>무구</b> — 흉귀는 반드시, 여염 굿판은 이따금 부적을 떨군다
-      </div>
-      <button class="primary" id="btnNew" style="width:100%;margin-top:13px;font-size:15px">내림굿을 올린다</button>
-      <button id="btnCont" style="width:100%;margin-top:8px;display:none">🕯 이어서 야행한다</button>
+      <button class="primary" id="btnCont" style="width:100%;font-size:15px;display:none">🕯 이어서 야행한다</button>
+      <button id="btnNew" style="width:100%;margin-top:8px;font-size:14px">내림굿을 올린다 — 새 굿</button>
+      <button id="btnLearn" style="width:100%;margin-top:8px">🎓 처음 배우기 — 안내와 함께 첫 밤</button>
+      <button id="btnHelp" style="width:100%;margin-top:8px">📖 도움말 · 용어</button>
       <button id="btnMute" style="width:100%;margin-top:8px">🔊 소리 켜짐</button>
       <button id="btnFlash" style="width:100%;margin-top:8px">✴ 화면 번쩍임: 전체</button>
       <button id="btnDiff" style="width:100%;margin-top:8px">⚖ 난이도: 본굿 (표준·추천)</button>
       <button id="btnGeumje" style="width:100%;margin-top:8px;display:none">금제(禁制) 0</button>
       <div class="sub" id="titleMeta" style="margin-top:9px"></div>
+    </div>
+  </div>
+
+  <!-- 도움말·용어 사전 — 사전 정의가 아니라 게임 효과 우선, 「쉬운 행동 설명 — 무속 용어」 이중 표기 -->
+  <div class="overlay hidden" id="helpOv">
+    <div style="height:10px"></div>
+    <div class="sheet">
+      <div class="eyebrow">도움말 · 용어</div>
+      <div style="font-size:11px;font-weight:800;line-height:1.85;margin-top:6px" id="helpBody">
+        <b style="color:var(--gold)">⚔ 전투</b><br>
+        · <b>행동력 — 신력(神力)</b>: 카드를 내는 비용. 매 턴 3으로 시작<br>
+        · <b>굿 게이지 — 신명(神明)</b>: 카드 1장마다 +1, 5가 되면 필살굿을 쓸 수 있다<br>
+        · <b>신령 바꾸기 — 강신(降神)</b>: 신력 1로 빙의를 바꾼다. 빙의 효과(신기)가 통째로 바뀐다<br>
+        · <b>필살굿 — 굿거리</b>: 빙의 신령의 궁극기. 턴에 한 번<br>
+        · <b>전투의 한(恨)</b>: 붙은 쪽이 매 턴 그 수치만큼 피해를 입고 1 줄어든다. <b style="color:#e88a7a">신단 원한과는 다른 수치다</b><br>
+        · <b>낙인(烙)</b>: 공격 카드가 적중할 때마다 추가 피해. 철갑을 뚫는다<br>
+        <b style="color:var(--gold)" >🕯 런 진행</b><br>
+        · <b>신단 원한</b>: 봉인의 대가로 쌓이는 밤길 전체 수치. <b>4마다 저주 카드(동티) 1장</b>이 매 전투 덱에 스며든다<br>
+        · <b>저주 카드 — 동티</b>: 낼 수 없는 카드. 손을 썩힌다<br>
+        · <b>신단에 거둔다 — 봉인</b>: 이긴 귀신의 빙의 효과+필살굿+카드 3장. 출전은 몸주신+2위, 나머지는 대기<br>
+        · <b>보내주고 회복한다 — 천도</b>: 회복 + 최대체력 + 명복(다음 전투 축복)<br>
+        · <b>신령을 강화한다 — 치성</b>: 고른 신령의 카드가 전부 강화<br>
+        <b style="color:var(--gold)">🗺 경로 · 서사</b><br>
+        · <b>신물로 한을 풀어준다 — 해원(解冤)</b>: 사연 맞는 신물을 건네면 싸우지 않고 거둔다 (지도의 解)<br>
+        · <b>휴식처 — 당산목</b>: 휴식·위령제·천도재·소각·편성<br>
+        · <b>거둠 성향 — 신위 / 보냄 성향 — 공덕</b>: 무복 색과 엔딩이 갈린다<br>
+        · <b>지도 위험 태그</b>: 연타·반사·관통·저주·성장·흡혈·철갑·거울 — 덱과 상성을 보고 길을 골라라<br>
+        <b style="color:var(--gold)">⚖ 난이도</b><br>
+        · <b>본굿(표준)</b>: 회복이 귀하다. 실수의 대가가 다음 막까지 남는다<br>
+        · <b>이야기(관대)</b>: 서사 감상용 — 이전의 넉넉한 회복<br>
+        · <b>도전 수정자 — 금제(禁制)</b>: 클리어 후 해금, 본굿 위에 얹힌다
+      </div>
+      <button id="btnTipReset" style="width:100%;margin-top:10px">🔁 튜토리얼 안내 다시 보기 (초기화)</button>
+      <button class="primary" id="btnHelpClose" style="width:100%;margin-top:8px">돌아간다</button>
     </div>
   </div>
 
@@ -2412,7 +2441,7 @@ function toast(msg,long){
 }
 function show(id){$(id).classList.remove('hidden');}
 function hide(id){$(id).classList.add('hidden');}
-const ALL_OV=['titleOv','starterOv','mapOv','draftOv','rewardOv','restOv','eventOv','pickOv','burnOv','deckOv','altarOv','interOv','endOv'];
+const ALL_OV=['titleOv','starterOv','mapOv','draftOv','rewardOv','restOv','eventOv','pickOv','burnOv','deckOv','altarOv','interOv','endOv','helpOv'];
 function hideAll(){ALL_OV.forEach(hide);}
 
 // ---------- 연출 ----------
@@ -2420,6 +2449,19 @@ let animT=0, shakeT=0, floats=[], sparks=[], ribbons=[], lastHeart=0;
 let selCard=null;   // 첫 탭 = 확대, 두 번째 탭 = 사용
 let channelFlash=0, gutFxT=0;   // 강신 전환 번쩍 / 굿거리 대형 초상
 let tutStep=localStorage.getItem('ms_tut')?99:0;
+// ---------- 상황별 튜토리얼 팁 (개별 ID, 1회 노출, 도움말에서 초기화 가능) ----------
+const TIP_IDS=['map_preview','card_play','intent','reward_choice','first_seal','lineup_channel','wonhan_threshold','gut_ready'];
+function tipSeen(id){return !!localStorage.getItem('ms_tip_'+id);}
+function tip(id,msg){
+  if(tipSeen(id))return false;
+  localStorage.setItem('ms_tip_'+id,'1');
+  toast(msg,true); return true;
+}
+function resetTips(){
+  TIP_IDS.forEach(id=>localStorage.removeItem('ms_tip_'+id));
+  ['ms_tut','ms_tut2','ms_tut3'].forEach(k=>localStorage.removeItem(k));
+  tutStep=0;
+}
 let gutTimer=0;
 function showGutBanner(name,col){
   $('gutName').textContent=name;
@@ -2687,8 +2729,9 @@ function updateGutBtn(){
   const g=channeled?GUTS[channeled]:null;
   const ready=inBattle&&!busy&&g&&sinmyeong>=5&&!gutCastTurn;
   btn.classList.toggle('ready',!!ready);
-  btn.textContent=ready?('굿 「'+g.name+'」'):('신명 '+sinmyeong+'/5');
+  btn.textContent=ready?('필살굿 「'+g.name+'」'):('신명 '+sinmyeong+'/5');
   btn.disabled=!ready;
+  if(ready)tip('gut_ready','⚡ 굿 게이지(신명)가 찼다 — 필살굿(굿거리)은 턴에 한 번, 빙의 신령마다 다르다');
 }
 async function castGut(){
   if(!inBattle||busy||sinmyeong<5)return;
@@ -3441,13 +3484,14 @@ function showReward(){
   $('rewardTitle').textContent=S.name+josa(S.name,'을','를')+' 잠재웠다';
   $('rewardStory').textContent='“'+S.story+'”';
   const opts=$('rewardOpts'); opts.innerHTML='';
+  tip('reward_choice','⚖ 셋의 대가는 밤 끝까지 남는다 — 거두면 강해지되 원한이, 보내면 몸이, 치성은 부적이 남는다');
   const canSeal=S.ghost&&!S.boss&&!memberOf(enemy.sp)&&party.length<6;
   if(canSeal){
     const b=document.createElement('button'); b.className='optcard';
     const pv=document.createElement('div'); pv.className='pv'; pv.appendChild(mkPortrait(enemy.sp,52));
     const tx=document.createElement('div'); tx.className='tx';
-    tx.innerHTML='<b><span class="tdot" style="background:'+S.col+'"></span>봉인 — 신단에 거둔다 <span class="whtag">원한 +'+S.wh+'</span></b>'+
-      '<span>신기 「'+S.aura.name+'」 + 굿거리 + 카드 3장'+(activeGhostCount()<2?'':' — 출전이 가득 차 대기로')+'</span>';
+    tx.innerHTML='<b><span class="tdot" style="background:'+S.col+'"></span>신단에 거둔다 — 봉인 <span class="whtag">원한 +'+S.wh+'</span></b>'+
+      '<span>신기 「'+S.aura.name+'」 + 필살굿 + 카드 3장'+(activeGhostCount()<2?'':' (출전 가득 — 대기로)')+'<br>'+sealPreviewTxt(S)+'</span>';
     b.appendChild(pv); b.appendChild(tx);
     b.addEventListener('click',()=>{
       const slotFree=activeGhostCount()<2;
@@ -3455,6 +3499,8 @@ function showReward(){
       S.cards.forEach(c=>addCard(c,enemy.sp));
       seals++; sinwi+=2; updateHUD(); snd.gong();
       toast(S.name+josa(S.name,'이','가')+(slotFree?' 출전진에 들었다':' 신단에 대기한다 (당산목·막간에서 편성)')+' · 원한 +'+S.wh,true);
+      tip('first_seal','🩸 거둔 귀신은 몸주신+2위까지 출전한다 — 편성은 당산목·막간의 「신단 정비」에서');
+      if(wonhanTotal()>=3)tip('wonhan_threshold','⚠ 신단 원한 '+wonhanTotal()+' — 4마다 저주 카드(동티) 1장이 전투 덱에 스며든다 (지금 '+curseCount()+'장). 전투 중 붙는 한(恨)과는 다른 수치다');
       hide('rewardOv'); advanceMap();
     });
     opts.appendChild(b);
@@ -3464,7 +3510,7 @@ function showReward(){
     opts.appendChild(p);
   }
   const send=document.createElement('button'); send.className='optcard';
-  send.innerHTML='<div class="pv" style="color:#c99b3f">薦</div><div class="tx"><b>천도 — 한을 풀어 보내준다</b><span>회복 '+sendHealAmt()+' (체력 '+teamHP+'→'+Math.min(teamMax+dprof().sendMax,teamHP+sendHealAmt())+') + 최대체력 +'+dprof().sendMax+' + 명복(다음 전투 방어 '+dprof().blessBlock+(dprof().blessStr?'·힘 '+dprof().blessStr:'')+')</span></div>';
+  send.innerHTML='<div class="pv" style="color:#c99b3f">薦</div><div class="tx"><b>보내주고 회복한다 — 천도</b><span>'+sendPreviewTxt()+' · 공덕 +2</span></div>';
   send.addEventListener('click',()=>{
     sendoffs++; gongdeok+=2; teamMax+=dprof().sendMax; nextBless=true; healPlayer(sendHealAmt()); updateHUD();
     toast('귀신의 얼굴이 잠시 사람으로 돌아왔다… 공덕 +2',true); snd.heal();
@@ -3472,10 +3518,20 @@ function showReward(){
   });
   opts.appendChild(send);
   const chi=document.createElement('button'); chi.className='optcard';
-  chi.innerHTML='<div class="pv" style="color:#c99b3f">祈</div><div class="tx"><b>치성 — 신령 하나를 올린다</b><span>그 신령의 카드가 전부 강화된다.</span></div>';
+  chi.innerHTML='<div class="pv" style="color:#c99b3f">祈</div><div class="tx"><b>신령을 강화한다 — 치성</b><span>고른 신령의 카드 3장이 전부 강화된다 (다음 화면에서 대상·카드 확인)</span></div>';
   chi.addEventListener('click',()=>{hide('rewardOv');openPick('chiseong');});
   opts.appendChild(chi);
   show('rewardOv');
+}
+// 보상 미리보기 — 선택 전에 실제 변화량을 보여준다 (테스트 가능하도록 분리)
+function curseAfter(w){if(hasRelic('threads'))w=Math.max(0,w-3);return Math.floor(w/4);}
+function sealPreviewTxt(S){
+  const W=wonhanTotal(), W2=W+S.wh;
+  return '신단 원한 '+W+'→'+W2+' · 동티 '+curseCount()+'→'+curseAfter(W2)+'장';
+}
+function sendPreviewTxt(){
+  const heal=sendHealAmt(), after=Math.min(teamMax+dprof().sendMax,teamHP+heal);
+  return '체력 '+teamHP+'→'+after+' · 최대체력 +'+dprof().sendMax+' · 명복(다음 전투 방어 '+dprof().blessBlock+(dprof().blessStr?'·힘 '+dprof().blessStr:'')+')';
 }
 
 // ---------- 신령 선택 ----------
@@ -3915,10 +3971,8 @@ function renderMap(){
   }
   mapSel=null; $('mapInfo').style.display='none';
   show('mapOv');
-  if(act===0&&mapPos===-1&&!localStorage.getItem('ms_tut3')){
-    localStorage.setItem('ms_tut3','1');
-    setTimeout(()=>toast('🗺 노드를 탭해 살펴보라 — 「이 길로 간다」를 누르기 전엔 얼마든지 다른 길을 볼 수 있다',true),900);
-  }
+  if(act===0&&mapPos===-1&&!tipSeen('map_preview'))
+    setTimeout(()=>tip('map_preview','🗺 노드를 탭해 살펴보라 — 「이 길로 간다」를 누르기 전엔 얼마든지 다른 길을 볼 수 있다'),900);
   requestAnimationFrame(drawMapLines);
 }
 function drawMapLines(){
@@ -4441,7 +4495,35 @@ function newRun(){
   });
   show('starterOv');
 }
-$('btnNew').addEventListener('click',()=>{ac();snd.tap();newRun();});
+// 새 굿: 진행 중 야행이 있으면 덮어쓰기 2단 확인 (오조작 방지)
+let newGateArmed=false, newGateTimer=0;
+function newRunGate(){
+  if(localStorage.getItem('ms_run')&&!newGateArmed){
+    newGateArmed=true; snd.curse();
+    $('btnNew').textContent='⚠ 진행 중인 야행 기록이 사라진다 — 한 번 더 탭';
+    clearTimeout(newGateTimer);
+    newGateTimer=setTimeout(()=>{newGateArmed=false;$('btnNew').textContent='내림굿을 올린다 — 새 굿';},3200);
+    return false;
+  }
+  clearTimeout(newGateTimer); newGateArmed=false;
+  $('btnNew').textContent='내림굿을 올린다 — 새 굿';
+  newRun(); return true;
+}
+$('btnNew').addEventListener('click',()=>{ac();snd.tap();newRunGate();});
+$('btnLearn').addEventListener('click',()=>{
+  ac(); snd.tap();
+  if(localStorage.getItem('ms_run')&&!newGateArmed){toast('진행 중 야행이 있다 — 「새 굿」으로 정리하거나 이어서 야행하라',true);return;}
+  resetTips();
+  toast('안내와 함께 시작한다 — 낯선 말은 「도움말 · 용어」에 다 있다',true);
+  newRun();
+});
+$('btnHelp').addEventListener('click',()=>{snd.tap();show('helpOv');});
+$('btnHelpClose').addEventListener('click',()=>{snd.tap();hide('helpOv');});
+$('btnTipReset').addEventListener('click',()=>{resetTips();snd.gong();toast('튜토리얼 안내를 다시 보여준다');});
+$('cWon').style.cursor='pointer';
+$('cWon').addEventListener('click',()=>{
+  toast('신단 원한 '+wonhanTotal()+' — 봉인의 대가. <b>4마다 저주 카드(동티) 1장</b>이 매 전투 덱에 스며든다 (지금 '+curseCount()+'장).<br>전투 중 붙는 <b>한(恨)</b>은 별개 — 매 턴 그만큼 피해를 주고 1 줄어든다.',true);
+});
 $('btnCont').addEventListener('click',()=>{ac();snd.tap();if(!loadRun()){toast('이어갈 야행이 없다');showTitle();}});
 $('btnMute').addEventListener('click',()=>{
   muted=!muted;
@@ -4471,6 +4553,7 @@ function showTitle(){
   $('btnMute').textContent=muted?'🔇 소리 꺼짐':'🔊 소리 켜짐';
   $('btnFlash').textContent=FLASH_LABEL[flashLevel]||FLASH_LABEL.full;
   $('btnDiff').textContent=DIFF_LABEL[diffMode]||DIFF_LABEL.bongut;
+  newGateArmed=false; $('btnNew').textContent='내림굿을 올린다 — 새 굿';
   const w=+(localStorage.getItem('ms_wins')||0);
   const ends=['만신','성무','흑무'].filter(e=>localStorage.getItem('ms_end_'+e));
   $('titleMeta').textContent=(w>0?('🦊 귀문 봉인 '+w+'회'):'')+(ends.length?(' · 엔딩: '+ends.join(' / ')):'');
