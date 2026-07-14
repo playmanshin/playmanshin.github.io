@@ -60,9 +60,10 @@ const test=`
     boons=['sagi']; relics=['tigereye']; nextBless=true;
     startBattle('gaekgwi');
     await sleep(1000);
-    // 산신 몸주신(str 신기 없음): tigereye 1+1, 명복 1+1 = 4 기대
+    // v0.7.1: 사기는 턴마다 처음 힘을 얻을 때만 +1 (장군신 후반 폭주 1차 조정)
+    // tigereye 1+사기1, 명복 1+사기0(같은 턴 두 번째) = 3
     console.log('[사기] 전투 시작 힘='+player.str);
-    assert.equal(player.str,4);   // 호랑이눈 1+1, 명복 1+1
+    assert.equal(player.str,3);
     // ---------- 다단히트 임계 스냅샷: 첫 타격이 50% 경계를 넘겨도 예상=실제 ----------
     inBattle=false; stopDrone();
     boons=['bultoe']; relics=[]; nextBless=false;

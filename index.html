@@ -932,7 +932,7 @@ const BOONS={
     [{id:'seonbong',n:'선봉(先鋒)',d:'매 전투 첫 공격 카드 피해 +4'},
      {id:'gunjin',n:'군진(軍陣)',d:'전투 시작 시 방어 6'}],
     [{id:'yeongyeok',n:'연격(連擊)',d:'다단히트 카드의 타격당 피해 +1'},
-     {id:'sagi',n:'사기(士氣)',d:'힘을 얻을 때마다 +1 (강신의 힘은 제외)'}],
+     {id:'sagi',n:'사기(士氣)',d:'턴마다 처음 힘을 얻을 때 +1 (강신의 힘은 제외)'}],
     [{id:'chamsu',n:'참수 본능',d:'적 체력 30% 이하면 공격 +5'},
      {id:'bultoe',n:'불퇴(不退)',d:'체력 50% 이상이면 받는 공격 −2'}]
   ],
@@ -943,6 +943,42 @@ const BOONS={
      {id:'jeoseunggil',n:'저승길',d:'내가 받는 恨 피해 절반'}],
     [{id:'wonnyeom',n:'원념(怨念)',d:'적 恨 10 이상이면 공격 +4'},
      {id:'heonhwa',n:'헌화(獻花)',d:'전투 시작 시 회복 6'}]
+  ],
+  // 방어를 공격으로 바꾼다 — 잘 막았을 때 전투를 끝낼 수 있게
+  yongsin:[
+    [{id:'yongteullim',n:'용틀임',d:'방어 카드를 낼 때마다 이번 턴 공수 +1'},
+     {id:'gipeunso',n:'깊은 소(沼)',d:'전투 시작 시 방어 6'}],
+    [{id:'yeokrin',n:'역린(逆鱗)',d:'적의 공격을 전부 막아내면 반격 5'},
+     {id:'bineul',n:'비늘 이월',d:'턴이 바뀔 때 방어 최대 5를 남긴다'}],
+    [{id:'seungcheon',n:'승천(昇天)',d:'방어 10 이상을 지닌 채 공격하면 피해 +4'},
+     {id:'haeil',n:'해일(海溢)',d:'필살굿 사용 시 지닌 방어만큼 피해 (최대 12)'}]
+  ],
+  // 넘치는 회복을 힘으로 — 안전함이 지루함이 되지 않게
+  sansin:[
+    [{id:'sanullim',n:'산울림',d:'회복이 넘치면 초과분만큼 적 피해 (최대 4)'},
+     {id:'horangi',n:'호랑이 걸음',d:'전투 시작 시 힘 +1'}],
+    [{id:'saenggi',n:'생기(生氣)',d:'전투 중 회복할 때마다 이번 턴 공수 +1'},
+     {id:'bawideung',n:'바위 등',d:'전투 시작 시 방어 5'}],
+    [{id:'beomgajuk',n:'범가죽',d:'체력 70% 이상이면 공격 +3'},
+     {id:'sanjeonggi',n:'산 정기',d:'턴 종료 시 회복 2'}]
+  ],
+  // 카드 순서와 첫 수를 보상한다
+  chilseong:[
+    [{id:'saebyeok',n:'새벽별',d:'매 턴 첫 카드의 신력 −1'},
+     {id:'bukdu',n:'북두(北斗)',d:'전투 시작 드로우 +2'}],
+    [{id:'yuseong',n:'유성(流星)',d:'매 턴 첫 공격 카드 피해 +3'},
+     {id:'byeoljari',n:'별자리',d:'턴마다 3장째 카드를 내면 드로우 1'}],
+    [{id:'hyeseong',n:'혜성(彗星)',d:'매 턴 3장째부터 공격 피해 +2'},
+     {id:'byeolgapju',n:'별빛 갑주',d:'카드를 낼 때마다 방어 +1'}]
+  ],
+  // 생명을 쌓아 무기로 — 회복 누적의 공격 전환
+  samsinhalmi:[
+    [{id:'samsinkkeun',n:'삼신끈',d:'전투 중 회복할 때마다 적 恨 +1'},
+     {id:'baenaethim',n:'배냇힘',d:'최대체력 +8 (즉시)'}],
+    [{id:'jeomji',n:'점지(點指)',d:'전투 시작 시 회복 5, 적 恨 +2'},
+     {id:'gangbo',n:'강보(襁褓)',d:'회복이 넘치면 초과분만큼 방어 (최대 6)'}],
+    [{id:'taetjul',n:'탯줄',d:'전투 중 회복 누적 12마다 힘 +1'},
+     {id:'samsinsang',n:'삼신상',d:'턴 종료 시 회복 2'}]
   ]
 };
 function hasBoon(id){return boons.includes(id);}
@@ -1104,6 +1140,7 @@ function effCost(inst){
   const v=cardVals(inst);
   let c=v.cost;
   if(c<90&&auraId()==='firstDiscount'&&!firstCardPlayed)c=Math.max(0,c-1);
+  if(c<90&&hasBoon('saebyeok')&&turnCardCount===0)c=Math.max(0,c-1);
   return c;
 }
 function cardDesc(v,curse,def){
@@ -2774,6 +2811,10 @@ async function castGut(){
   }
   if(f.energy)energy+=f.energy;
   if(f.draw)drawCards(f.draw);
+  if(hasBoon('haeil')&&enemy.hp>0&&player.block>0){
+    dmgEnemy(Math.min(12,player.block),'#3f6a9e');
+    float2(ENEMY_POS[0],ENEMY_POS[1]-72,'해일!','#3f6a9e',true);
+  }
   updateHUD(); renderHand();
   await sleep(220);
   if(enemy.hp<=0){await winBattle();return;}
@@ -2838,7 +2879,20 @@ function drawCards(n){
 // ---------- 피해/회복 ----------
 function healPlayer(n){
   const real=Math.min(n,teamMax-teamHP);
-  if(hasBoon('kkotgap')&&inBattle&&enemy&&enemy.hp>0&&n>real)gainHan(Math.min(3,n-real));
+  const over=n-real;
+  if(inBattle&&enemy&&enemy.hp>0&&over>0){
+    if(hasBoon('kkotgap'))gainHan(Math.min(3,over));
+    if(hasBoon('sanullim')){dmgEnemy(Math.min(4,over),'#4fa86a');float2(ENEMY_POS[0],ENEMY_POS[1]-58,'산울림','#4fa86a');}
+    if(hasBoon('gangbo')){player.block+=Math.min(6,over);float2(SHAMAN_POS[0],SHAMAN_POS[1]-58,'강보 +'+Math.min(6,over),'#3f6a9e');}
+  }
+  if(inBattle&&enemy&&enemy.hp>0&&real>0){
+    if(hasBoon('saenggi')){player.nextAtk+=1;float2(SHAMAN_POS[0],SHAMAN_POS[1]-64,'생기 공수 +1','#c99b3f');}
+    if(hasBoon('samsinkkeun'))gainHan(1);
+    if(hasBoon('taetjul')){
+      battleHealAcc+=real;
+      while(battleHealAcc>=12){battleHealAcc-=12;const sv=gainStr(1);float2(SHAMAN_POS[0],SHAMAN_POS[1]-90,'탯줄 — 힘 +'+sv,'#c99b3f');}
+    }
+  }
   teamHP+=real;
   if(real>0){
     if(!inBattle&&runStats)runStats.outHeal+=real;
@@ -2865,6 +2919,7 @@ function dmgPlayer(n,pierce,midHit,hitPos){ // 미방어 피해량 반환. pierc
   if(left>0){
     teamHP-=left; shakeT=0.25;
     if(runStats)runStats.dmgTaken+=left;
+    if(rsCombat)rsCombat.dmg+=left;
     snd.strike('impact',hitPos||(midHit?'mid':'first'));
     duckMusic(left>=10?5:3,0.35);
     shamanHurtT=0.3;
@@ -2881,6 +2936,7 @@ function dotPlayer(n){
   if(hasBoon('jeoseunggil'))n=Math.ceil(n/2);
   teamHP-=n; shakeT=0.15; snd.han();
   if(runStats)runStats.dmgTaken+=n;
+  if(rsCombat)rsCombat.dmg+=n;
   shamanHurtT=0.16;                                    // 짧은 움찔 (화이트 플래시 없음)
   float2(SHAMAN_POS[0],SHAMAN_POS[1]-74,'-'+n+' 恨','#9a6fd0');
   if(teamHP<=0){teamHP=0;defeat();}
@@ -2888,7 +2944,8 @@ function dotPlayer(n){
 }
 // 힘 획득 단일 창구 (사기 보정 포함, 강신의 임시 힘은 제외)
 function gainStr(n){
-  const g=n+(hasBoon('sagi')?1:0);
+  const g=n+(hasBoon('sagi')&&!sagiTurnUsed?1:0);   // 사기: 턴마다 처음 힘을 얻을 때만 (후반 폭주 방지)
+  if(hasBoon('sagi'))sagiTurnUsed=true;
   player.str+=g;
   return g;
 }
@@ -2956,7 +3013,9 @@ async function playCard(inst,el){
   if(d.xcost&&energy<1){toast('바칠 신력이 없다');snd.tap();return;}
   if(c>energy){toast('신력(神力)이 부족하다!');snd.tap();return;}
   const xVal=d.xcost?energy:0;
-  busy=true; energy-=c; firstCardPlayed=true; cardsPlayed++;
+  busy=true; energy-=c; firstCardPlayed=true; cardsPlayed++; turnCardCount++;
+  if(hasBoon('byeolgapju'))player.block+=1;
+  if(hasBoon('byeoljari')&&turnCardCount===3){drawCards(1);float2(SHAMAN_POS[0],SHAMAN_POS[1]-96,'별자리 — 드로우 1','#c99b3f');}
   snd.cast(d.fx||(v.dmg||v.xDmg||v.comboDmg||v.dmgPerSpirit?'slash':v.block||v.xBlock?'ward':v.heal||v.cleanse?'heal':v.dot?'hanMist':v.mark?'seal':null));
   sinmyeong=Math.min(5,sinmyeong+1);
   if(el)el.classList.add('played');
@@ -2999,6 +3058,10 @@ async function playCard(inst,el){
       if(hasBoon('yeongyeok')&&hits>1)base+=1;
       if(hasBoon('chamsu')&&enemy.hp<=enemy.max*0.3)base+=5;
       if(hasBoon('wonnyeom')&&enemy.han>=10)base+=4;
+      if(hasBoon('yuseong')&&firstOfTurn&&h===0)base+=3;
+      if(hasBoon('hyeseong')&&turnCardCount>=3)base+=2;
+      if(hasBoon('seungcheon')&&player.block>=10)base+=4;
+      if(hasBoon('beomgajuk')&&teamHP>=teamMax*0.7)base+=3;
       let total=Math.round(base*(player.weak>0?0.75:1))+(enemy.field==='bloodmoon'?2:0);
       if(v.curseSyn&&hand.some(x=>CARDS[x.id].curse)){total*=2;if(h===0)float2(ENEMY_POS[0],ENEMY_POS[1]-92,'앙갚음!','#9a6fd0');}
       dmgEnemy(total,SPIRITS[inst.owner]?SPIRITS[inst.owner].col:'#c99b3f',pierce,false,d.fx||'slash',h<hits-1,
@@ -3030,6 +3093,7 @@ async function playCard(inst,el){
     const bn=v.block+(auraId()==='blockPlus2'?2:0);
     player.block+=bn;snd.block();spawnFx('ward',SHAMAN_POS[0],SHAMAN_POS[1]-38);
     float2(SHAMAN_POS[0],SHAMAN_POS[1]-70,'+'+bn+' 방어','#3f6a9e');
+    if(hasBoon('yongteullim')){player.nextAtk+=1;float2(SHAMAN_POS[0],SHAMAN_POS[1]-84,'용틀임 공수 +1','#c99b3f');}
   }
   if(v.heal){healPlayer(v.heal);spawnFx('heal',SHAMAN_POS[0],SHAMAN_POS[1]-36);}
   if(enemy.hp>0){
@@ -3060,6 +3124,7 @@ async function playCard(inst,el){
     const bn=v.xBlock*Math.min(4,xVal)+(auraId()==='blockPlus2'?2:0);
     player.block+=bn;snd.block();spawnFx('ward',SHAMAN_POS[0],SHAMAN_POS[1]-38,false,1.15);
     float2(SHAMAN_POS[0],SHAMAN_POS[1]-70,'큰절 +'+bn+' 방어','#3f6a9e');
+    if(hasBoon('yongteullim')){player.nextAtk+=1;float2(SHAMAN_POS[0],SHAMAN_POS[1]-84,'용틀임 공수 +1','#c99b3f');}
   }
   if(v.scry){
     const names=drawPile.slice(-v.scry).reverse().map(x=>CARDS[x.id].name);
@@ -3093,6 +3158,8 @@ async function endTurn(){
   if(tutStep===3){tutStep=99;localStorage.setItem('ms_tut','1');}
   busy=true; snd.drum();
   if(auraId()==='endBlock4'){player.block+=4;float2(SHAMAN_POS[0],SHAMAN_POS[1]-70,'용린 +4','#3f6a9e');}
+  if(hasBoon('sanjeonggi'))healPlayer(2);
+  if(hasBoon('samsinsang'))healPlayer(2);
   if(auraId()==='handBlock'&&hand.length>0){
     const b=hand.filter(x=>!CARDS[x.id].retain).length*2; player.block+=b;
     float2(SHAMAN_POS[0],SHAMAN_POS[1]-70,'움켜쥐기 +'+b,'#3f6a9e');
@@ -3149,6 +3216,10 @@ async function endTurn(){
       }
       if((hits||1)>1)await sleep(180);
     }
+    if(drained===0&&hasBoon('yeokrin')&&enemy.hp>0){
+      dmgEnemy(5,'#3f6a9e');
+      float2(ENEMY_POS[0],ENEMY_POS[1]-64,'역린!','#3f6a9e');
+    }
     if(drain&&drained>0&&enemy.hp>0){
       enemy.hp=Math.min(enemy.max,enemy.hp+drained);
       float2(ENEMY_POS[0],ENEMY_POS[1]-50,'+'+drained+' 🩸','#d84a3a'); snd.heal();
@@ -3197,6 +3268,7 @@ async function endTurn(){
   await sleep(320);
   // ---- 무당 턴 ----
   firstCardPlayed=false; dmgTurnAcc=0; player.turnAtk=false; gutCastTurn=false; cardsPlayed=0;
+  turnCardCount=0; sagiTurnUsed=false;
   for(const pw of powers){                                   // 신령부 발동
     if(pw.k==='str'){const sv=gainStr(pw.v);float2(SHAMAN_POS[0],SHAMAN_POS[1]-90,'旗 힘 +'+sv,'#c99b3f');}
     else if(pw.k==='heal')healPlayer(pw.v);
@@ -3204,7 +3276,9 @@ async function endTurn(){
     else if(pw.k==='han'&&enemy.hp>0){const got=gainHan(pw.v);if(got>0)float2(ENEMY_POS[0],ENEMY_POS[1]-50,'焰 恨 +'+got,'#9a6fd0');}
   }
   if(enemy.field==='goksori'){sinmyeong=Math.min(5,sinmyeong+1);float2(SHAMAN_POS[0],SHAMAN_POS[1]-96,'곡소리 — 신명 +1','#c99b3f');}
-  if(auraId()!=='blockCarry')player.block=0; else player.block=Math.min(player.block,12);
+  if(auraId()==='blockCarry')player.block=Math.min(player.block,12);      // 방어이월 신기 상한 12 (불변식)
+  else if(hasBoon('bineul'))player.block=Math.min(player.block,5);
+  else player.block=0;
   if(player.han>0){
     dotPlayer(player.han); player.han--;
     if(teamHP<=0)return;
@@ -3233,7 +3307,12 @@ async function endTurn(){
 function startBattle(sp,opts){
   opts=opts||{};
   rsBattleTurns=0;
-  if(opts.boss&&runStats)(runStats.acts[act]=runStats.acts[act]||{}).bossEnterHP=teamHP;
+  rsCombat={act,row:clamp(depth-act*ROWS_PER_ACT,0,ROWS_PER_ACT-1),enemy:sp,
+    type:opts.boss?'boss':(opts.elite?'elite':'normal'),startHP:teamHP,startMax:teamMax,dmg:0};
+  if(opts.boss&&runStats){
+    const A=(runStats.acts[act]=runStats.acts[act]||{});
+    A.bossEnterHP=teamHP; A.bossEnterMax=teamMax;
+  }
   const S=SPIRITS[sp], w=S.wild;
   const vr=opts.variant?VARIANTS[opts.variant]:null;
   const gj=geumje();
@@ -3257,7 +3336,7 @@ function startBattle(sp,opts){
   player={block:0,str:0,weak:0,han:0,nextAtk:0,revive:false,nineUsed:false,turnAtk:false};
   energy=3+(hasRelic('jipsin')?1:0);
   carryE=0; channeled=null; firstCardPlayed=false; dmgTurnAcc=0; sinmyeong=0; gutCastTurn=false;
-  powers=[]; cardsPlayed=0; enemy.mark=0;
+  powers=[]; cardsPlayed=0; enemy.mark=0; turnCardCount=0; sagiTurnUsed=false; battleHealAcc=0;
   channelFreeLeft=hasRelic('brassbell')?1:0;
   firstAtkBonusLeft=hasRelic('oldknife')?1:0;
   deck.forEach(x=>{if(x.ramp)x.ramp=0;});   // 담금질은 전투 안에서만
@@ -3282,6 +3361,10 @@ function startBattle(sp,opts){
   if(hasBoon('gunjin'))player.block+=6;
   if(hasBoon('giljabi'))gainHan(3);
   if(hasBoon('heonhwa'))healPlayer(6);
+  if(hasBoon('gipeunso'))player.block+=6;
+  if(hasBoon('bawideung'))player.block+=5;
+  if(hasBoon('horangi')){const sv=gainStr(1);float2(SHAMAN_POS[0],SHAMAN_POS[1]-96,'호랑이 걸음 힘 +'+sv,'#c99b3f');}
+  if(hasBoon('jeomji')){healPlayer(5);gainHan(2);}
   if(hasRelic('mirrorR')){player.block+=8;}
   if(hasRelic('salt'))enemy.weak+=2;
   if(hasRelic('tigereye'))gainStr(1);
@@ -3291,7 +3374,7 @@ function startBattle(sp,opts){
   const fld=enemy.field;
   if(fld)setTimeout(()=>toast('⚑ '+FIELDS[fld].name+' — '+FIELDS[fld].desc,true),1400);
   else if(cc>0)setTimeout(()=>toast('원한이 짙다… 동티 '+cc+'장이 스며들었다',true),1500);
-  drawCards(5+(hasRelic('bukdrum')?2:0)+(auraId()==='startDraw1'?1:0));
+  drawCards(5+(hasRelic('bukdrum')?2:0)+(hasBoon('bukdu')?2:0)+(auraId()==='startDraw1'?1:0));
   updateHUD(); renderSpiritBar();
   if(act===0&&depth===0&&tutStep===0){
     tutStep=1;
@@ -3323,6 +3406,7 @@ function gainRandomRelic(){
 async function winBattle(){
   kills++;
   if(runStats){runStats.battles++;runStats.turns+=rsBattleTurns+1;}
+  rsEndCombat(true);
   enemyFx.dieT=0.7; snd.die(); duckMusic(4,0.5);
   screenFlash('white',0.1); hitStop(0.12);
   wisp(ENEMY_POS[0],ENEMY_POS[1]-46,'#8a8a96',8,40);   // 재가 흩날린다
@@ -3362,6 +3446,7 @@ function defeat(){
   }
   const wasRev=enemy&&enemy.rev;
   if(runStats){runStats.battles++;runStats.turns+=rsBattleTurns+1;}   // 패배한 마지막 전투도 계측
+  rsEndCombat(false);
   clearRun();
   exitBattleUI(); snd.lose();
   hideAll();
@@ -3372,6 +3457,7 @@ function defeat(){
   renderEndParty();
   $('endStats').innerHTML='<div><b>'+kills+'</b><span>퇴마</span></div><div><b>'+seals+'</b><span>봉인</span></div><div><b>'+sendoffs+'</b><span>천도</span></div>';
   if(runStats){runStats.win=false;runStats.deathAct=act;}
+  rsFinal();
   $('endRunStats').innerHTML=statsSummaryHtml(); bindCopyStats();
   show('endOv');
 }
@@ -3399,6 +3485,7 @@ function victory(){
   renderEndParty();
   $('endStats').innerHTML='<div><b>'+sinwi+'</b><span>신위</span></div><div><b>'+gongdeok+'</b><span>공덕</span></div><div><b>'+kills+'</b><span>퇴마</span></div>';
   if(runStats)runStats.win=true;
+  rsFinal();
   $('endRunStats').innerHTML=statsSummaryHtml(); bindCopyStats();
   show('endOv');
 }
@@ -3443,7 +3530,7 @@ $('btnInterGo').addEventListener('click',()=>{
   if($('btnInterGo').disabled)return;
   hide('interOv');
   act++; genMap();
-  if(runStats)runStats.acts[act]={startHP:teamHP};
+  if(runStats)runStats.acts[act]={startHP:teamHP,startMax:teamMax};
   renderMap(); updateHUD();
 });
 $('btnInterLineup').addEventListener('click',()=>{
@@ -3498,7 +3585,7 @@ function showReward(){
       const slotFree=activeGhostCount()<2;
       party.push({sp:enemy.sp,lv:1,wh:S.wh,active:slotFree});
       S.cards.forEach(c=>addCard(c,enemy.sp));
-      seals++; sinwi+=2; updateHUD(); snd.gong();
+      seals++; sinwi+=2; rsReward('seal',enemy.sp); updateHUD(); snd.gong();
       toast(S.name+josa(S.name,'이','가')+(slotFree?' 출전진에 들었다':' 신단에 대기한다 (당산목·막간에서 편성)')+' · 원한 +'+S.wh,true);
       tip('first_seal','🩸 거둔 귀신은 몸주신+2위까지 출전한다 — 편성은 당산목·막간의 「신단 정비」에서');
       if(wonhanTotal()>=3)tip('wonhan_threshold','⚠ 신단 원한 '+wonhanTotal()+' — 4마다 저주 카드(동티) 1장이 전투 덱에 스며든다 (지금 '+battleCurseCount(wonhanTotal())+'장). 전투 중 붙는 한(恨)과는 다른 수치다');
@@ -3514,7 +3601,7 @@ function showReward(){
   send.innerHTML='<div class="pv" style="color:#c99b3f">薦</div><div class="tx"><b>보내주고 회복한다 — 천도</b><span>'+sendPreviewTxt()+' · 공덕 +2</span></div>';
   send.addEventListener('click',()=>{
     const a=sendApply();
-    sendoffs++; gongdeok+=2; teamMax=a.newMax; nextBless=true; healPlayer(a.heal); updateHUD();
+    sendoffs++; gongdeok+=2; rsReward('sendoff'); teamMax=a.newMax; nextBless=true; healPlayer(a.heal); updateHUD();
     toast('귀신의 얼굴이 잠시 사람으로 돌아왔다… 공덕 +2',true); snd.heal();
     hide('rewardOv'); advanceMap();
   });
@@ -3566,6 +3653,7 @@ function openPick(mode,ret){
     b.addEventListener('click',()=>{
       if(pickMode==='chiseong'){
         if(runStats)runStats.chiseong++;
+        rsReward('chiseong',m.sp);
         if(m.lv>=2){teamMax+=6;teamHP+=6;toast('최대체력 +6');}
         else{m.lv=2;snd.gong();toast(S.name+'의 부적에 핏빛 획이 더해졌다',true);}
       }else if(pickMode==='release'){
@@ -3746,11 +3834,28 @@ function genMap(){
 }
 const NODE_META={battle:['鬼','원귀'],elite:['凶','흉귀'],event:['緣','기연'],rest:['木','당산목'],shop:['市','장터'],boss:['門','문지기']};
 // ---------- 런 계측 (로컬 전용 — 외부 전송 없음) ----------
-let runStats=null, rsBattleTurns=0;
+let runStats=null, rsBattleTurns=0, rsCombat=null;
+let turnCardCount=0, sagiTurnUsed=false, battleHealAcc=0;   // 턴/전투 단위 강화 상태
 function initRunStats(){
-  runStats={v:1,diff:diffMode,bodyGod:party[0]?party[0].sp:null,ts:Date.now(),
-    acts:{0:{startHP:teamHP}},dmgTaken:0,outHeal:0,battles:0,turns:0,paths:{},
-    chiseong:0,deathAct:null,win:null};
+  runStats={v:2,diff:diffMode,bodyGod:party[0]?party[0].sp:null,ts:Date.now(),
+    acts:{0:{startHP:teamHP,startMax:teamMax}},dmgTaken:0,outHeal:0,battles:0,turns:0,paths:{},
+    chiseong:0,deathAct:null,win:null,
+    combats:[],rewards:[],final:null};   // v2: 전투별·보상별·최종 스냅샷
+}
+function rsReward(choice,target){
+  if(runStats&&runStats.rewards)runStats.rewards.push({act,enemy:enemy?enemy.sp:null,choice,target:target||null});
+}
+function rsEndCombat(win){
+  if(runStats&&runStats.combats&&rsCombat){
+    runStats.combats.push(Object.assign(rsCombat,{endHP:teamHP,endMax:teamMax,turns:rsBattleTurns+1,win}));
+  }
+  rsCombat=null;
+}
+function rsFinal(){
+  if(!runStats)return;
+  runStats.final={hp:teamHP,maxHP:teamMax,deckSize:deck.length,
+    upgradedCards:deck.filter(c=>c.owner&&(memberOf(c.owner)||{}).lv>=2).length,
+    relicCount:relics.length,activeSpirits:activeMembers().map(m=>m.sp),boons:boons.slice()};
 }
 function rsPath(t){if(runStats)runStats.paths[t]=(runStats.paths[t]||0)+1;}
 function statsSummaryHtml(){
@@ -3799,6 +3904,7 @@ function loadRun(){
     kills=s.kills;seals=s.seals;sendoffs=s.sendoffs;sinwi=s.sinwi;gongdeok=s.gongdeok;coins=s.coins;
     revDone=!!s.revDone;honsuDone=!!s.honsuDone;uidSeq=s.uidSeq||1000;nextBless=!!s.bless;
     runStats=s.runStats||null;
+    if(runStats){runStats.combats=runStats.combats||[];runStats.rewards=runStats.rewards||[];}   // v1 저장 호환
     diffMode=s.diff||'bongut';                            // 난이도는 런에 귀속
     channeled=null;
     renderRelics();updateHUD();
