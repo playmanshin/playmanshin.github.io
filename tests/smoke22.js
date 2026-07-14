@@ -56,6 +56,97 @@ const test=`
     rsFinal();
     assert.equal(runStats.final.upgradedCards,1,'치성 해제 시 무구 up만 1');
     console.log('[runStats] upgradedCards가 isUp 단일 기준 OK');
+    // ---- 4) 축 payoff 카드 (v0.8) ----
+    const inHand=id=>{const i={uid:uidSeq++,id,owner:null};hand.push(i);return i;};
+    party=[{sp:'janggun',lv:1,wh:0,active:true}];
+    deck=[]; relics=[]; tokens=[]; boons=[];
+    for(let i=0;i<8;i++)addCard('bujeok');
+    teamMax=80; teamHP=80; act=0; depth=0; coins=0;
+    genMap();
+    startBattle('gaekgwi');
+    await sleep(950);
+    enemy.hp=500; enemy.max=500;
+    assert.equal(exhaustPile.length,0,'전투 시작 시 소멸 더미 비움');
+    assert.equal(battleSelfAcc,0,'전투 시작 시 제물 누적 0');
+    // 소멸 더미 + 제물(hpCost): 혈서
+    hand.length=0; energy=1;
+    await playCard(inHand('hyeolseo'),null);
+    assert.equal(exhaustPile.length,1,'혈서가 소멸 더미에');
+    assert.equal(battleSelfAcc,3,'혈서 체력 3이 제물로');
+    // 핏값: 제물 바친 턴 힘 +1, 턴당 1회 (사기 전례)
+    energy=3;
+    await playCard(inHand('pitgap'),null);
+    assert.equal(powers.filter(p=>p.k==='sac').length,1,'핏값 신령부 설치');
+    assert.equal(exhaustPile.length,2,'핏값도 소멸 더미에');
+    player.block=0;
+    await playCard(inHand('dueok3'),null);   // 포악: 힘+1, 자해1
+    assert.equal(player.str,4,'광기1 + 핏값1 = 2→4');
+    assert.equal(battleSelfAcc,4,'자해 1 누적');
+    await playCard(inHand('dueok3'),null);
+    assert.equal(player.str,5,'핏값은 턴당 1회 — 카드 힘만 +1');
+    assert.equal(battleSelfAcc,5);
+    // 제물은 실제 잃은 체력만: 방어가 흡수하면 안 센다
+    player.block=5;
+    await playCard(inHand('dueok3'),null);
+    assert.equal(battleSelfAcc,5,'방어 흡수 자해는 제물이 아니다');
+    player.block=0;
+    console.log('[제물] 혈서/자해 누적·핏값 턴당 1회·방어 흡수 제외 OK');
+    // 넋오름: 소멸 더미 1장당 +3 (최대 4장)
+    player.str=2; energy=3;
+    let ehp=enemy.hp;
+    await playCard(inHand('neokoreum'),null);
+    assert.equal(ehp-enemy.hp,12,'4 + 소멸2×3 + 힘2 = 12');
+    exhaustPile.length=0; for(let i=0;i<9;i++)exhaustPile.push({id:'x'});
+    energy=3; ehp=enemy.hp;
+    await playCard(inHand('neokoreum'),null);
+    assert.equal(ehp-enemy.hp,18,'소멸 9장도 4장 캡 — 4+12+2=18');
+    console.log('[넋오름] 소멸 더미 참조·4장 캡 OK');
+    // 지신밟기: 지닌 방어만큼 (최대 12), 방어는 소모하지 않음
+    player.str=2; player.block=20; energy=3; ehp=enemy.hp;
+    await playCard(inHand('jisin'),null);
+    assert.equal(ehp-enemy.hp,14,'min(12,20) + 힘2 = 14');
+    assert.equal(player.block,20,'방어 비소모');
+    player.block=0;
+    console.log('[지신밟기] 방어 참조 상한 12 OK');
+    // 신벌: 恨 12 경계·증가분 캡 +16·恨 불변
+    player.str=2; enemy.han=11; energy=3; ehp=enemy.hp;
+    await playCard(inHand('sinbeol'),null);
+    assert.equal(ehp-enemy.hp,11,'恨 11 — 미발동 (9+2)');
+    enemy.han=12; energy=3; ehp=enemy.hp;
+    await playCard(inHand('sinbeol'),null);
+    assert.equal(ehp-enemy.hp,22,'恨 12 — ×2 발동 (11×2)');
+    assert.equal(enemy.han,12,'신벌은 恨을 건드리지 않는다');
+    player.str=30; energy=3; ehp=enemy.hp;
+    await playCard(inHand('sinbeol'),null);
+    assert.equal(ehp-enemy.hp,55,'증가분 캡: min(39×2, 39+16) = 55');
+    console.log('[신벌] 문턱 경계·증가분 캡·恨 무간섭 OK');
+    // 작두 타기: 제물 1당 +2 (상한 +12)
+    player.str=2; battleSelfAcc=7; energy=3; ehp=enemy.hp;
+    await playCard(inHand('jakdu'),null);
+    assert.equal(ehp-enemy.hp,26,'12 + min(12,7×2) + 힘2 = 26');
+    assert.equal(battleSelfAcc,10,'작두 자해 3 재누적');
+    console.log('[작두] 제물 스케일·상한 +12 OK');
+    // 지전/소지: 토큰 생성, 신명 미적립, 소멸 처리, 풀 외
+    hand.length=0; sinmyeong=0; energy=3;
+    await playCard(inHand('jijeon'),null);
+    assert.equal(sinmyeong,1,'지전은 신명을 채운다');
+    assert.equal(hand.filter(x=>x.id==='soji').length,2,'소지 2장 생성');
+    player.str=2; ehp=enemy.hp;
+    const sj=hand.find(x=>x.id==='soji');
+    await playCard(sj,null);
+    assert.equal(ehp-enemy.hp,5,'소지 3 + 힘2');
+    assert.equal(sinmyeong,1,'소지는 신명을 채우지 않는다');
+    assert.ok(exhaustPile.some(x=>x.id==='soji'),'소지는 소멸된다');
+    assert.ok(!GEAR_POOL.includes('soji'),'소지는 드래프트 풀 밖');
+    ['neokoreum','jijeon','jisin','pitgap','sinbeol','jakdu'].forEach(id=>assert.ok(GEAR_POOL.includes(id),id+' 풀 포함'));
+    assert.ok(deck.every(c=>c.id!=='soji'),'소지는 덱에 남지 않는다');
+    // 손 가득: 8장에서 지전 → 1장만
+    hand.length=0; for(let i=0;i<7;i++)inHand('bujeok');
+    const jj=inHand('jijeon'); energy=3;
+    await playCard(jj,null);
+    assert.equal(hand.filter(x=>x.id==='soji').length,1,'손 상한 8 — 소지 1장만');
+    console.log('[지전/소지] 토큰 생성·신명 게이트·손 상한 OK');
+    inBattle=false; stopDrone();
     console.log('SMOKE_OK');
     process.exit(0);
   }catch(err){console.error('SMOKE_FAIL',err);process.exit(1);}
