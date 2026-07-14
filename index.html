@@ -55,7 +55,7 @@
   }
   /* 1세대식 대각 구도: 적 스프라이트 우상 ↔ 적 정보 좌상 / 무당 좌하 ↔ 무당 정보 우하 — 창이 캐릭터를 덮지 않는다 */
   #enemyBox{top:58px; left:10px}
-  #allyBox{top:190px; right:10px}
+  #allyBox{top:232px; right:10px}
   .mbox .nrow{display:flex; align-items:center; gap:5px; font-size:12px; font-weight:900}
   .nrow .hpin{margin-left:auto; padding-left:8px; font-size:10px; font-weight:800; color:var(--dim); font-variant-numeric:tabular-nums}
   .tdot{width:8px;height:8px;border-radius:50%;flex:none}
@@ -74,7 +74,7 @@
   #intentChip.calm{border-color:#3f6a9e; color:#7aa0c8; background:#0c1420; text-shadow:none}
   /* ---------- 신단 바 ---------- */
   #spiritBar{
-    position:absolute; left:0; right:0; top:258px; height:58px; z-index:10;
+    position:absolute; left:0; right:0; top:300px; height:58px; z-index:10;
     display:none; flex-direction:column; background:rgba(8,5,14,.72);
     border-top:1px solid rgba(58,43,74,.5);
   }
@@ -524,7 +524,7 @@
    무구 드래프트 + 유물 + 카드 소각 + 신규 적 기제(거울/반사/흡혈/증식)
    ============================================================ */
 
-const VW=360, VH=640, STAGE_H=256, TAU=Math.PI*2;
+const VW=360, VH=640, STAGE_H=298, TAU=Math.PI*2;   // 무대를 넓혀 신단 바~손패 사이 죽은 공간을 줄인다
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const pick=a=>a[Math.floor(Math.random()*a.length)];
@@ -2479,7 +2479,7 @@ function spawnRibbons(){ // 오색 지전(紙錢)이 흩날린다
 }
 let shamanLunge=0;
 let enemyFx={hurtT:0,lungeT:0,dieT:0,appearT:0,seed:0};
-const SHAMAN_POS=[84,230], ENEMY_POS=[268,186];   // 1세대식 대각 구도 — 적은 우상(멀리), 무당은 좌하(가까이)
+const SHAMAN_POS=[84,272], ENEMY_POS=[268,228];   // 1세대식 대각 구도 — 적은 우상(멀리), 무당은 좌하(가까이)
 // 전투 스프라이트 메타 — 기본값(원혼 wraith·boss 유도)에 예외 개체만 명시해 개별 보정한다
 // motion: wraith(부유·찢어지는 피격) / beast(웅크렸다 도약) / giant(화면이 먼저 흔들리고 몸이 뒤따름)
 const SPRITE_META={
@@ -4675,6 +4675,7 @@ function drawStage(){
   ctx.beginPath(); ctx.arc(174,40,4.6,0,TAU); ctx.fill();
   ctx.beginPath(); ctx.arc(186,52,3,0,TAU); ctx.fill();
   ctx.restore();
+  ctx.save(); ctx.translate(0,42);                                     // 지평선 그룹 하강 (무대 확장분)
   ctx.fillStyle='rgba(10,9,20,0.9)';                                   // 능선
   ctx.beginPath();ctx.moveTo(0,150);ctx.quadraticCurveTo(70,106,150,148);ctx.quadraticCurveTo(230,108,VW,150);ctx.lineTo(VW,176);ctx.lineTo(0,176);ctx.closePath();ctx.fill();
   drawProp(A);
@@ -4689,6 +4690,7 @@ function drawStage(){
     mg.addColorStop(1,'rgba(140,140,170,0)');
     ctx.fillStyle=mg; ctx.fillRect(0,y-20,VW,40);
   }
+  ctx.restore();
   // 신목 오색천 (탈색된)
   ctx.strokeStyle='#0c0a12'; ctx.lineWidth=5; ctx.lineCap='round';
   ctx.beginPath();ctx.moveTo(VW+4,8);ctx.quadraticCurveTo(322,24,284,18);ctx.stroke();
@@ -4708,7 +4710,7 @@ function drawStage(){
   ctx.beginPath(); ctx.ellipse(SHAMAN_POS[0],SHAMAN_POS[1]+3,50,13,0,0,TAU); ctx.fill();
   ctx.fillStyle='rgba(20,14,22,0.55)';
   ctx.beginPath(); ctx.ellipse(ENEMY_POS[0],ENEMY_POS[1]+3,50,13,0,0,TAU); ctx.fill();
-  [[16,212],[168,194],[206,180],[196,250]].forEach(([cx2,cy2],i)=>{     // 촛불
+  [[16,254],[168,236],[206,222],[196,292]].forEach(([cx2,cy2],i)=>{     // 촛불
     const fl=Math.sin(animT*9+i*2)*1.4+Math.sin(animT*23+i*5)*0.6;
     ctx.fillStyle='#b0a48c';
     ctx.fillRect(cx2-1.5,cy2-7,3,7);
@@ -4735,7 +4737,7 @@ function drawStage(){
   if(gutFxT>0&&channeled){                                              // 굿거리: 신령이 크게 현신
     const p=gutFxT/1.1;
     drawPixelSprite('sp_'+channeled,spiritPix(channeled),
-      180,190-(1-p)*26,2.3,false,p*0.5);
+      180,232-(1-p)*26,2.3,false,p*0.5);
   }
   {                                                                     // 무당 (픽셀)
     let sx=SHAMAN_POS[0], lph=0;
