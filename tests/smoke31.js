@@ -19,21 +19,23 @@ const test=`
     const G=(sp,act)=>({sp,lv:1,wh:0,active:act!==false});
     party=[G('janggun')]; deck=[]; relics=[]; tokens=[]; uidSeq=1; boons=[];
     teamMax=80; teamHP=80; coins=0; kills=0; seals=0; sendoffs=0; sinwi=0; gongdeok=0;
-    // ---- 1) 배치: 부정거리(1막)만 조사 노드 ≤1, 전투·정예를 치환하지 않는다 ----
-    let with1=0, batDelta=0;
+    // ---- 1) 배치: 부정거리(1막)는 조사 노드 정확 1개 (재추첨 보장), 전투·정예 비치환 ----
     for(let k=0;k<300;k++){
       act=0; genMap();
-      const inv=[], types={battle:0,elite:0};
+      const inv=[]; let rest5=false;
       for(let r=0;r<mapRows.length;r++)mapRows[r].forEach(n=>{
         if(n.t==='investigate')inv.push(r);
-        if(types[n.t]!==undefined)types[n.t]++;
+        if(r===mapRows.length-2&&n.t==='rest')rest5=true;
       });
-      assert.ok(inv.length<=1,'막당 최대 1개');
-      if(inv.length){with1++; assert.ok(inv[0]>=1&&inv[0]<=4,'행1~4에만');}
-      // 전투 보존: 행0 전투 고정 + 치환은 비전투만이므로 battle+elite ≥ 2 (행0+보스 외 최소치 sanity)
-      assert.ok(types.battle>=1,'전투 존재');
+      assert.equal(inv.length,1,'막당 정확 1개 (재추첨 보장 — Codex 교차 리뷰)');
+      assert.ok(inv[0]>=1&&inv[0]<=4,'행1~4에만');
+      assert.ok(rest5,'행5 고정 당산목 잔존 (보스 전 회복 접점 보존)');
     }
-    assert.ok(with1>=290,'배치율 ≥96% (실측 '+with1+'/300)');
+    // 치환 우선순위 — 순수 함수 직접 검증 (기연 > 장터 > 당산목)
+    const fx=[[{t:'battle'}],[{t:'battle'},{t:'rest'}],[{t:'shop'},{t:'battle'}],[{t:'event'},{t:'battle'}],[{t:'battle'}]];
+    const tgt=pickInvestigateTarget(fx);
+    assert.equal(fx[tgt.r][tgt.i].t,'event','기연 우선 치환');
+    assert.equal(pickInvestigateTarget([[{t:'battle'}],[{t:'battle'}],[{t:'battle'}]]),null,'후보 없음 → null');
     act=1; genMap();
     let invCnt=0;
     for(let r=0;r<mapRows.length;r++)mapRows[r].forEach(n=>{if(n.t==='investigate')invCnt++;});
@@ -81,14 +83,39 @@ const test=`
     startBattle('jangsanbeom',{boss:true}); await sleep(950);
     assert.equal(enemy.pat[0].b,8,'단서 — 첫 의태가 웅크림으로');
     assert.equal(enemy.pat[0].m,undefined);
-    assert.ok(enemy.pat.slice(1).some(mv=>mv.m!==undefined)===false||true,'이후 주기는 원본 유지(참고)');
+    const patTail=JSON.stringify(enemy.pat.slice(1));
     inBattle=false; stopDrone();
     caseState=null;
     startBattle('jangsanbeom',{boss:true}); await sleep(950);
     assert.equal(enemy.pat[0].m,1,'무단서 — 보스 정상 (조사 비필수)');
+    assert.equal(JSON.stringify(enemy.pat.slice(1)),patTail,'이후 주기는 원본과 동일 (deepEqual — 항진식 단언 교체)');
+    inBattle=false; stopDrone();
+    caseState={act:0,clues:['박힌 흰 털','바뀐 발자국'],picked:['jangseung','jipsin']};
+    startBattle('jangsanbeom',{boss:true}); await sleep(950);
+    assert.equal(enemy.pat[0].m,1,'방울 없는 단서 2개 — 보스 정상');
     inBattle=false; stopDrone();
     console.log('[장산범] 단서 반응·무단서 정상 OK');
-    // ---- 5) 복이 초상 아트 존재 (블록 문법) ----
+    // ---- 5) 장면 재개: 픽 1회 후 재접속 시 남은 선택권 복구 (Codex 교차 리뷰) ----
+    act=0; depth=2; genMap(); mapPos=-1; mapCur=0;
+    initRunStats();
+    assert.equal(runStats.v,4,'runStats v4 (조사 기록 세대)');
+    party=[G('janggun')]; deck=[]; addCard('bujeok');
+    caseState=null;
+    openInvestigate();
+    assert.equal(caseState.open,true,'장면 열림 기록');
+    investigatePick('bell');
+    saveRun();
+    caseState=null; hideAll();
+    assert.equal(loadRun(),true);
+    assert.equal(caseState.open,true,'재접속 — 장면 복구');
+    assert.equal(caseState.picked.length,1,'첫 선택 유지');
+    assert.equal(investigatePick('jangseung'),true,'남은 선택권 살아있음 (몰수 없음)');
+    caseState.open=false;
+    saveRun(); caseState=null;
+    assert.equal(loadRun(),true);
+    assert.equal(caseState.open,false,'닫힌 장면은 재개하지 않음');
+    console.log('[재개] 중간 재접속 선택권 복구 OK');
+    // ---- 6) 복이 초상 아트 존재 (블록 문법) ----
     assert.equal(typeof ART.boki,'function','ART.boki 등록');
     console.log('SMOKE_OK');
     process.exit(0);
