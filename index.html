@@ -852,6 +852,45 @@ const SPIRIT_AX={
   myogwi:['heal'],samokgu:['str'],bulgasari:['block'],imugi:['han'],heokkaebi:['curse']
 };
 const AX_LABEL={han:'恨',str:'힘',mark:'낙인',block:'방어',heal:'회복',engine:'패',curse:'동티',self:'제물',retain:'보존',sin:'신명',sal:'살'};
+
+// ---------- 합(合) 듀엣 — 신령 간 명시 크로스 시너지 (v0.9) ----------
+// 조건은 전부 출전/몸주 여부(공개 정보), 카드 설명에 상시 표기. cardVals 단일 경유 → 표시=실제 파리티 자동
+const DUETS={
+  songak3:{ally:'cheonyeo',txt:'처녀귀신 동행 — 恨 +4',mod:v=>{v.dot=(v.dot||0)+4;}},
+  saja1:{ally:'samokgu',txt:'삼목구 동행 — 피해 +4',mod:v=>{v.dmg+=4;}},
+  imu3:{body:'yongsin',txt:'용신 몸주 — 내상 없음·피해 +4',mod:v=>{v.selfDmg=0;v.dmg+=4;}},
+  eoduk2:{ally:'yagwanggwi',txt:'야광귀 동행 — 비용 0',mod:v=>{v.cost=0;}},
+  gaek2:{ally:'dalgyal',txt:'달걀귀신 동행 — 드로우 3·방어 +3',mod:v=>{v.draw=Math.max(v.draw||0,3);v.block=(v.block||0)+3;}},
+  dueok2:{body:'janggun',txt:'장군신 몸주 — 첫 타 +4',mod:v=>{v.firstHit=(v.firstHit||0)+4;}},   // 타수 증가 금지 원칙(적대 검토) — 첫 타 가산으로
+  bul3:{ally:'jangseung',txt:'장승 동행 — 힘 +1',mod:v=>{v.str=(v.str||0)+1;}},
+  yagwang1:{ally:'dokkaebi',txt:'도깨비 동행 — 피해 +3',mod:v=>{v.dmg+=3;}}
+};
+function duetOn(du){
+  if(!du)return false;
+  if(du.body)return party.length>0&&party[0].sp===du.body;
+  return !!memberOf(du.ally)&&isActiveSp(du.ally);
+}
+// 합(合) 판정 — 대합: 출전 귀신 2위의 주축(첫 태그) 일치 / 소합: 몸주신 주축이 출전 귀신과 일치(1회). 중첩 가능
+function hapState(){
+  const ghosts=party.filter(m=>SPIRITS[m.sp].ghost&&m.active);
+  const axOf=sp=>(SPIRIT_AX[sp]||[])[0];
+  const out=[];
+  if(ghosts.length>=2&&axOf(ghosts[0].sp)&&axOf(ghosts[0].sp)===axOf(ghosts[1].sp))out.push({big:true,ax:axOf(ghosts[0].sp)});
+  const b=party.length?axOf(party[0].sp):null;
+  if(b&&ghosts.some(g=>axOf(g.sp)===b))out.push({big:false,ax:b});
+  return out;
+}
+// 굿거리 듀엣 — 몸주·출전 편성에 따라 대목이 자란다 (v0.9). castGut·신단 설명이 공용
+function gutFxOf(sp){
+  const g=GUTS[sp]; if(!g)return null;
+  const f=Object.assign({},g.fx); let note=null;
+  if(sp==='cheonyeo'&&isActiveSp('mongdal')){f.dot=9;note='사혼(死婚) — 몽달귀신이 함께 곡한다: 恨 +9';}
+  if(sp==='mongdal'&&isActiveSp('cheonyeo')){f.weak=4;f.dot=3;note='사혼(死婚) — 처녀귀신이 함께 곡한다: 약화 4·恨 3';}
+  if(sp==='jeoseungsaja'&&party.length&&party[0].sp==='bari'){f.pctDmg=0.25;note='저승길 동무 — 비례 피해 25% (상한 18)';}
+  if(sp==='gaekgwi'&&party.length&&party[0].sp==='samsinhalmi'){f.heal=16;note='제삿밥 한 상 — 회복 16';}
+  if(sp==='dalgyal'&&party.length&&party[0].sp==='chilseong'){f.draw=4;note='무면이 별을 센다 — 드로우 4';}
+  return {fx:f,note};
+}
 function gearRar(id){return GEAR_RAR[id]||'c';}
 function deckCount(id){return deck.filter(c=>c.id===id).length;}
 function partyAxes(){const s=new Set();activeMembers().forEach(m=>(SPIRIT_AX[m.sp]||[]).forEach(a=>s.add(a)));return s;}
@@ -1227,6 +1266,8 @@ function isUp(inst){if(inst.up)return true;if(!inst.owner)return false;const m=m
 function cardVals(inst){
   const d=CARDS[inst.id], v=Object.assign({cost:d.cost},d.v);
   if(isUp(inst))Object.assign(v,d.u||{});
+  const du=DUETS[inst.id];
+  if(du){v._duet=du.txt;v._duetOn=duetOn(du);if(v._duetOn)du.mod(v);}   // 듀엣 — 손·상점·전투 전부 이 경유
   return v;
 }
 function auraId(){return channeled&&SPIRITS[channeled].aura?SPIRITS[channeled].aura.id:null;}
@@ -1287,6 +1328,7 @@ function cardDesc(v,curse,def){
   if(v.selfDmg)p.push('내상 '+v.selfDmg);
   if(def&&def.exhaust)p.push('「소멸」 — 이번 전투에서 사라진다');
   if(def&&def.retain)p.push('「보존」'+(def.ramp?' — 넘길 때마다 피해 +'+def.ramp:''));
+  if(v._duet)p.push((v._duetOn?'<b style="color:#e0b44a">「합」</b> ':'합(대기): ')+v._duet);
   return p.join(', ');
 }
 
@@ -2889,14 +2931,16 @@ async function castGut(){
   if(gutCastTurn){toast('숨을 골라야 한다 — 굿거리는 턴에 한 번');snd.tap();return;}
   const g=channeled?GUTS[channeled]:null;
   if(!g)return;
+  const gd=gutFxOf(channeled);   // 굿거리 듀엣 반영분 (v0.9)
   gutCastTurn=true;
   gutSwapFree=true;   // 맞이굿: 굿을 시전한 턴은 강신 전환 1회 무료 — "A로 채워 쏘고 B에 주차" 뱅킹
   busy=true; sinmyeong=0; snd.gutcast(); duckMusic(5,0.5); shamanLunge=0.42; shakeT=0.3;
   screenFlash('invert',0.12);
   showGutBanner(g.name,SPIRITS[channeled].col);
   spawnRibbons(); gutFxT=1.1;
+  if(gd.note)setTimeout(()=>toast('⚭ '+gd.note,true),600);
   await sleep(520);
-  const f=g.fx;
+  const f=gd.fx;
   if(f.revive){player.revive=true;float2(SHAMAN_POS[0],SHAMAN_POS[1]-80,'초혼 — 명줄을 붙들었다','#c99b3f');}
   if(f.skipTurn&&enemy.hp>0){enemy.skipTurn=true;float2(ENEMY_POS[0],ENEMY_POS[1]-56,'다음 수가 넘어간다!','#c99b3f');}
   if(f.pctDmg&&enemy.hp>0)dmgEnemy(Math.min(18,Math.ceil(enemy.hp*f.pctDmg)),'#3e4454',false,true);
@@ -3217,6 +3261,7 @@ async function playCard(inst,el){
           const gb=(party[0]&&party[0].sp==='sansin')?5:3;
           base+=gb;float2(SHAMAN_POS[0],SHAMAN_POS[1]-114,'보은 +'+gb,'#4fa86a');
         }
+        if(v.firstHit)base+=v.firstHit;   // 듀엣 첫 타 가산 (광란 — 타수 증가 금지 원칙의 대체 어휘)
       }
       if(hasBoon('yeongyeok')&&hits>1)base+=1;
       if(hasBoon('chamsu')&&enemy.hp<=enemy.max*0.3)base+=5;
@@ -3494,6 +3539,7 @@ async function endTurn(){
   if(aid==='startHeal2')healPlayer(2);
   if(hasRelic('gutsang'))healPlayer(1);
   if(aid==='startWeak1'&&enemy.hp>0){enemy.weak+=1;float2(ENEMY_POS[0],ENEMY_POS[1]-50,'물안개','#7a6fa0');}
+  if(aid==='sadSong'&&isActiveSp('mulgwisin')&&enemy.hp>0){enemy.weak+=1;float2(ENEMY_POS[0],ENEMY_POS[1]-62,'곡이 물안개를 부른다 — 약화','#7a6fa0');}   // 듀엣: 몽달 빙의 × 물귀신 동행
   if(aid==='startEnemyHan2'&&enemy.hp>0){const got=gainHan(2);if(got>0)float2(ENEMY_POS[0],ENEMY_POS[1]-50,'독단지 恨 +'+got,'#9a6fd0');}
   if(aid==='startEnemy5'&&enemy.hp>0){
     dmgEnemy(5,'#3e4454');
@@ -3554,6 +3600,8 @@ function startBattle(sp,opts){
   const cc=battleCurseCount(wonhanTotal());   // 미리보기(sealPreviewTxt)와 동일 helper — 어긋나면 테스트가 잡는다
   for(let i=0;i<cc;i++)drawPile.push({uid:uidSeq++,id:'dongti',owner:null});
   shuffleA(drawPile); discard=[]; hand=[];
+  // 듀엣 「저주받이」: 염매×허깨비 동반 출전 — 개전 동티 1장을 버린 더미에 (앙갚음·헛것 연료 자급, 적대 검토로 2→1장)
+  if(isActiveSp('yeommae')&&isActiveSp('heokkaebi'))discard.push({uid:uidSeq++,id:'dongti',owner:null});
   inBattle=true; busy=true;
   enemyFx={hurtT:0,lungeT:0,dieT:0,appearT:0.8,seed:Math.random()*10};
   hideAll();
@@ -3567,24 +3615,43 @@ function startBattle(sp,opts){
     const bmsg='명복이 함께한다 (+방어'+dprof().blessBlock+(dprof().blessStr?' 힘'+dprof().blessStr:'')+')';
     setTimeout(()=>float2(SHAMAN_POS[0],SHAMAN_POS[1]-98,bmsg,'#c99b3f',true),900);
   }
+  // 개전 恨 공유 예산 6 (적대 검토 처방: 합·강화·강화 적층이 '카드 0장 자동승'을 만들지 않게 — 모든 개전 恨 소스가 공유)
+  let openHanLeft=6, hapDraw=0;
+  const gainHanOpen=n=>{const got=Math.min(n,openHanLeft);openHanLeft-=got;return got>0?gainHan(got):0;};
   boonFirstAtkLeft=hasBoon('seonbong')?1:0;
   if(hasBoon('gunjin'))player.block+=6;
-  if(hasBoon('giljabi'))gainHan(2);
+  if(hasBoon('giljabi'))gainHanOpen(2);
   if(hasBoon('heonhwa'))healPlayer(6);
   if(hasBoon('gipeunso'))player.block+=6;
   if(hasBoon('bawideung'))player.block+=5;
   if(hasBoon('horangi')){const sv=gainStr(1);float2(SHAMAN_POS[0],SHAMAN_POS[1]-96,'호랑이 걸음 힘 +'+sv,'#c99b3f');}
-  if(hasBoon('jeomji')){healPlayer(5);gainHan(2);}
+  if(hasBoon('jeomji')){healPlayer(5);gainHanOpen(2);}
   if(hasRelic('mirrorR')){player.block+=8;}
   if(hasRelic('salt'))enemy.weak+=2;
   if(hasRelic('tigereye'))gainStr(1);
+  // 합(合): 출전 축 일치의 개전 보너스 (v0.9) — 편성 화면에서 사전 예고
+  {
+    const hapMsgs=[];
+    hapState().forEach(h=>{
+      const tag=h.big?'대합':'소합';
+      switch(h.ax){
+        case 'han':{const got=gainHanOpen(h.big?4:2);if(got)hapMsgs.push(tag+' 恨 +'+got);break;}
+        case 'block':{const b=h.big?6:3;player.block+=b;hapMsgs.push(tag+' 방어 +'+b);break;}
+        case 'heal':{healPlayer(h.big?5:3);hapMsgs.push(tag+' 회복 '+(h.big?5:3));break;}
+        case 'engine':{hapDraw+=1;hapMsgs.push(tag+' 드로우 +1');break;}
+        case 'str':{if(h.big){gainStr(1);hapMsgs.push('대합 힘 +1');}else{player.nextAtk+=3;hapMsgs.push('소합 공수 +3');}break;}
+        case 'sal':{enemy.weak+=h.big?2:1;hapMsgs.push(tag+' 약화 '+(h.big?2:1));break;}
+      }
+    });
+    if(hapMsgs.length)setTimeout(()=>toast('⚭ 합(合)이 맞는다 — '+hapMsgs.join(' · '),true),1100);
+  }
   startDrone();
   if(opts.boss||opts.elite)snd.stinger(); else snd.ehit();
   toast((opts.boss?'…무언가 온다. ':opts.elite?'흉흉한 기운 — ':'')+S.name+josa(S.name,'이','가')+' 나타났다');
   const fld=enemy.field;
   if(fld)setTimeout(()=>toast('⚑ '+FIELDS[fld].name+' — '+FIELDS[fld].desc,true),1400);
   else if(cc>0)setTimeout(()=>toast('원한이 짙다… 동티 '+cc+'장이 스며들었다',true),1500);
-  drawCards(5+(hasRelic('bukdrum')?2:0)+(hasBoon('bukdu')?2:0)+(auraId()==='startDraw1'?1:0));
+  drawCards(5+(hasRelic('bukdrum')?2:0)+(hasBoon('bukdu')?2:0)+(auraId()==='startDraw1'?1:0)+hapDraw);
   updateHUD(); renderSpiritBar();
   if(act===0&&depth===0&&tutStep===0){
     tutStep=1;
@@ -4820,16 +4887,24 @@ function openAltar(editable,returnFn){
   hdr.innerHTML='업(業) — 신위(神威) <b style="color:#d84a3a">'+sinwi+'</b> · 공덕(功德) <b style="color:#4fa86a">'+gongdeok+'</b><br>'+
     (sinwi-gongdeok>=6?'무복이 밤빛으로 물들고 있다…':gongdeok-sinwi>=6?'무복이 새벽빛으로 밝아지고 있다':'저울은 아직 기울지 않았다');
   list.appendChild(hdr);
+  const hs=hapState();   // 합(合) 사전 예고 — 편성이 곧 개전 보너스 (v0.9)
+  if(hs.length){
+    const p2=document.createElement('p'); p2.className='sub';
+    p2.innerHTML='⚭ 합(合)이 맞는다: '+hs.map(h=>(h.big?'대합':'소합')+' 「'+AX_LABEL[h.ax]+'」').join(' · ')+' — 매 전투 시작 보너스';
+    list.appendChild(p2);
+  }
   party.forEach(m=>{
     const S=SPIRITS[m.sp];
     const el=document.createElement('div'); el.className='optcard'; el.style.cursor='default';
     const pv=document.createElement('div'); pv.className='pv'; pv.appendChild(mkPortrait(m.sp,52));
     const tx=document.createElement('div'); tx.className='tx';
+    const axc=SPIRIT_AX[m.sp]?' <span class="lvtag" style="background:#3a3450;color:#c9b8e0">'+AX_LABEL[SPIRIT_AX[m.sp][0]]+'</span>':'';
     const tags=(m.lv>=2?' <span class="lvtag">치성</span>':'')+((m.wh||0)>0?' <span class="whtag">원한 '+m.wh+'</span>':'')
       +(m.haewon?' <span class="lvtag" style="background:#4fa86a;color:#0c2814">해원</span>':'');
     const stat=SPIRITS[m.sp].ghost?(m.active?' <span class="lvtag" style="background:#c99b3f">출전</span>':' <span class="whtag" style="background:#3a3450;color:#9c8fae">대기</span>'):' <span class="lvtag" style="background:#8a2020;color:#f0d9c9">몸주신</span>';
-    tx.innerHTML='<b><span class="tdot" style="background:'+S.col+'"></span>'+S.name+tags+stat+'</b>'+
-      '<span>신기 「'+S.aura.name+'」 — '+S.aura.desc+' · 굿거리 「'+(GUTS[m.sp]?GUTS[m.sp].name:'—')+'」<br>'+S.story+'</span>';
+    const gn=GUTS[m.sp]?gutFxOf(m.sp):null;
+    tx.innerHTML='<b><span class="tdot" style="background:'+S.col+'"></span>'+S.name+axc+tags+stat+'</b>'+
+      '<span>신기 「'+S.aura.name+'」 — '+S.aura.desc+' · 굿거리 「'+(GUTS[m.sp]?GUTS[m.sp].name:'—')+'」'+(gn&&gn.note?' <b style="color:#e0b44a">⚭</b>':'')+'<br>'+S.story+'</span>';
     el.appendChild(pv); el.appendChild(tx);
     if(editable&&SPIRITS[m.sp].ghost){
       const tg=document.createElement('button');
