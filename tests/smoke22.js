@@ -188,6 +188,34 @@ const test=`
     setChannel('cheonyeo',false);
     assert.equal(swapDiscountLeft,0,'재전환에도 같은 턴엔 할인 없음');
     console.log('[쌍방울] 전환 직후 첫 카드 할인·턴당 1회 OK');
+    // ---- 6) 적대 검증 반영 (v0.8) ----
+    // 제물 = 실지불: 체력 1 바닥 클램프 시 명목값 과대 집계 금지
+    battleSelfAcc=0; teamHP=2; energy=1;
+    await playCard(inHand('hyeolseo'),null);
+    assert.equal(teamHP,1,'체력 1 바닥');
+    assert.equal(battleSelfAcc,1,'제물은 실제 잃은 1만 집계');
+    teamHP=60;
+    // 턴 만료 플래그가 endTurn 경유로 전부 리셋
+    swapSinTurn=true; gutSwapFree=true; swapDiscountLeft=1; twinbellTurnUsed=true; sacTurnGained=true;
+    busy=false;
+    await endTurn(); await sleep(300);
+    assert.equal(swapSinTurn,false,'여흥 리셋');
+    assert.equal(gutSwapFree,false,'맞이굿 리셋');
+    assert.equal(swapDiscountLeft,0,'쌍방울 할인 리셋');
+    assert.equal(twinbellTurnUsed,false,'쌍방울 마킹 리셋');
+    assert.equal(sacTurnGained,false,'핏값 마킹 리셋');
+    // 신설 카드 u: 수치 완비 (isUp 개통 전제 — P1 획득 접점 대비)
+    assert.equal(cardVals({id:'neokoreum',up:true}).dmg,6);
+    assert.equal(cardVals({id:'neokoreum',up:true}).exhaustSyn,4);
+    assert.equal(cardVals({id:'jakdu',up:true}).dmg,15);
+    assert.equal(cardVals({id:'jisin',up:true}).cost,0);
+    assert.equal(cardVals({id:'pitgap',up:true}).cost,0);
+    assert.equal(cardVals({id:'sinbeol',up:true}).hanMult,10);
+    // 카드 데이터 불변식: hanMult(배율)와 다단(hits>1)은 결합 금지
+    Object.values(CARDS).forEach(c=>[c.v,c.u].forEach(vv=>{
+      if(vv&&vv.hanMult)assert.ok(!(vv.hits>1),'다단×배율 금지: '+c.name);
+    }));
+    console.log('[검증반영] 제물 실지불·턴 플래그 endTurn 리셋·u: 완비·다단×배율 금지 OK');
     inBattle=false; stopDrone();
     console.log('SMOKE_OK');
     process.exit(0);

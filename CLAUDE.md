@@ -13,7 +13,7 @@
 |------|------|
 | `<style>` | 다크 팔레트 + 게임보이 전투창(크림 이중테두리) + 레트로 UI |
 | DOM | topbar/relicBar → 전투 정보창 → spiritBar(강신) → handArea → botbar → 오버레이(`titleOv` `starterOv` `mapOv` `rewardOv` `pickOv` `altarOv` 신단 · `restOv` 당산목 · `eventOv` `draftOv` `gearOv` 무구 · `deckOv` `burnOv` `interOv` 막간 · `endOv`) |
-| 데이터 | `CARDS`(카드 90+) `RELICS` `SPIRITS`(28종: 신기 aura·굿거리는 `GUTS`) `BOONS`(막간 강화) `TOKENS`/`TOKEN_OF`(해원 신물) `VARIANTS` `ACTS`(4막) `ACT_SCALE` `FIELDS`(판효과) |
+| 데이터 | `CARDS`(카드 110+) `RELICS` `SPIRITS`(28종: 신기 aura·굿거리는 `GUTS`) `BOONS`(막간 강화) `TOKENS`/`TOKEN_OF`(해원 신물) `VARIANTS` `ACTS`(4막) `ACT_SCALE` `FIELDS`(판효과) |
 | 상태 | `party`(신단, `active`=출전) `deck` `relics` `tokens` `boons` `sinwi/gongdeok`(업) `mapRows`(노드 그래프 `next[]`) |
 | 아트 | `drawShaman` + `ART{}` 28종 — fillRect 블록 규칙은 AGENTS.md 참조 |
 | 픽셀 파이프라인 | `pixelate()` 4단 램프+베이어 디더+외곽선, 12fps 스텝, `PIX=1.35` |

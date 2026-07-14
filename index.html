@@ -2653,7 +2653,7 @@ function updateHUD(){
     $('aHpT').textContent=teamHP+'/'+teamMax;
     statusChips($('aSt'),player);
     const aSt=$('aSt');
-    const PW={str:'힘+',heal:'회복',sin:'신명+',han:'恨+',blockEnd:'방어+'};
+    const PW={str:'힘+',heal:'회복',sin:'신명+',han:'恨+',blockEnd:'방어+',sac:'제물턴 힘+'};
     powers.forEach(pw=>{
       const s=document.createElement('span'); s.className='schip';
       s.style.borderColor='#8a6210'; s.style.color='#e0b44a';
@@ -3064,9 +3064,10 @@ async function playCard(inst,el){
   if(!d.exhaust)discard.push(inst);                     // 소멸: 이번 전투에서 사라진다
   else exhaustPile.push(inst);                          // 소멸 더미 — 넋오름 등 payoff가 참조 (동티 소각·명두는 세지 않음)
   if(v.hpCost){
-    teamHP=Math.max(1,teamHP-v.hpCost);
-    float2(SHAMAN_POS[0],SHAMAN_POS[1]-74,'-'+v.hpCost+' 제물','#d84a3a'); snd.han(); updateHUD();
-    onSacrifice(v.hpCost);
+    const hpBefore=teamHP;
+    teamHP=Math.max(1,teamHP-v.hpCost);   // 체력 1 바닥 — 제물은 실제 잃은 만큼만 (클램프 시 과대 집계 방지)
+    float2(SHAMAN_POS[0],SHAMAN_POS[1]-74,'-'+(hpBefore-teamHP)+' 제물','#d84a3a'); snd.han(); updateHUD();
+    onSacrifice(hpBefore-teamHP);
   }
   const isAttack=!!(v.dmg||v.dmgPerSpirit||v.xDmg||v.comboDmg||v.blockDmg);
   if(isAttack)shamanLunge=0.42;
@@ -3111,7 +3112,8 @@ async function playCard(inst,el){
       let total=Math.round(base*(player.weak>0?0.75:1))+(enemy.field==='bloodmoon'?2:0);
       if(v.curseSyn&&hand.some(x=>CARDS[x.id].curse)){total*=2;if(h===0)float2(ENEMY_POS[0],ENEMY_POS[1]-92,'앙갚음!','#9a6fd0');}
       // 신벌: 조건부 배율 — 직격에만, 증가분 캡 +16 (힘·공수 합산 후 폭주 방지), 恨 자체는 불변
-      if(v.hanMult&&enemy.han>=v.hanMult){total=Math.min(total*2,total+16);if(h===0)float2(ENEMY_POS[0],ENEMY_POS[1]-92,'신벌!','#c99b3f',true);}
+      // hits===1 코드 가드: 다단×배율 곱연산(v0.5 차단 논거)이 향후 데이터 실수로도 재발하지 않게
+      if(v.hanMult&&hits===1&&enemy.han>=v.hanMult){total=Math.min(total*2,total+16);float2(ENEMY_POS[0],ENEMY_POS[1]-92,'신벌!','#c99b3f',true);}
       dmgEnemy(total,SPIRITS[inst.owner]?SPIRITS[inst.owner].col:'#c99b3f',pierce,false,d.fx||'slash',h<hits-1,
         hits>1?(h===0?'first':h===hits-1?'last':'mid'):undefined);
       if(enemy.thorns>0&&teamHP>0){snd.thorn();dmgPlayer(enemy.thorns);if(teamHP<=0)return;}  // 반사: 타격당
@@ -3356,7 +3358,7 @@ async function endTurn(){
     const idx=hand.findIndex(x=>CARDS[x.id].curse);
     if(idx>=0){hand.splice(idx,1);toast('명두가 동티를 태웠다.');renderHand();}
   }
-  updateHUD();
+  updateHUD(); renderSpiritBar();   // 턴 만료 플래그(맞이굿 등) 라벨 갱신
   busy=false; updateGutBtn();
 }
 
