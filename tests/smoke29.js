@@ -77,6 +77,8 @@ const test=`
     const sbCss=html.match(/#spiritBar\\{[^}]*\\}/s)[0];
     assert.ok(!/height\\s*:/.test(sbCss),'spiritBar는 auto 높이');
     assert.ok(/flex:none/.test(html.match(/#auraTxt\\{[^}]*\\}/s)[0]),'auraTxt 축소 금지');
+    // 미리보기 패널의 display:flex가 hidden 속성을 이기면 빈 박스가 상시 노출된다 (v10.13.2 회귀)
+    assert.ok(/#channelPeek\\[hidden\\]/.test(html),'channelPeek [hidden] display:none 규칙 존재');
     inBattle=false; stopDrone();
     console.log('SMOKE_OK');
     process.exit(0);
