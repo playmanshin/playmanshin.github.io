@@ -351,6 +351,7 @@
       <button id="btnCont" style="width:100%;margin-top:8px;display:none">🕯 이어서 야행한다</button>
       <button id="btnMute" style="width:100%;margin-top:8px">🔊 소리 켜짐</button>
       <button id="btnFlash" style="width:100%;margin-top:8px">✴ 화면 번쩍임: 전체</button>
+      <button id="btnDiff" style="width:100%;margin-top:8px">⚖ 난이도: 본굿 (표준·추천)</button>
       <button id="btnGeumje" style="width:100%;margin-top:8px;display:none">금제(禁制) 0</button>
       <div class="sub" id="titleMeta" style="margin-top:9px"></div>
     </div>
@@ -1019,7 +1020,26 @@ let sinwi=0, gongdeok=0, coins=15;          // 업(業): 신위 vs 공덕 / 엽�
 let sinmyeong=0;                             // 신명 (굿거리 게이지)
 let revDone=false, honsuDone=false;          // 역빙의 1회, 혼수함 1회
 let uidSeq=1;
-function geumje(){return +(localStorage.getItem('ms_geumje')||0);}
+// ---------- 난이도 프로필 ----------
+// 이야기: 기존의 관대한 회복 경제 보존 / 본굿(표준·추천): 회복·보상 경제 통제 — 실수의 대가가 다음 막까지 남는다
+// 금제는 본굿 위에 얹히는 modifier (이야기에서는 비활성). 적 능력치는 여기서 건드리지 않는다.
+let diffMode=localStorage.getItem('ms_diff')||'bongut';
+const DIFF={
+  story: {label:'이야기',restHeal:0.45,actHeal:0.40,sendHeal:0.30,sendMax:3,blessBlock:8,blessStr:1,shopHeal:0.45,shopHealCost:30,gearDraft:0.5,evHeal:1},
+  bongut:{label:'본굿', restHeal:0.30,actHeal:0.15,sendHeal:0.20,sendMax:2,blessBlock:6,blessStr:0,shopHeal:0.30,shopHealCost:35,gearDraft:0.3,evHeal:0.5}
+};
+function dprof(){return DIFF[diffMode]||DIFF.bongut;}
+// 전투 외 회복 헬퍼 — 난이도 프로필이 전투 카드 밸런스를 건드리지 않도록 경로를 분리한다
+function restHealAmt(){return Math.round(teamMax*dprof().restHeal);}
+function actHealAmt(){return Math.round(teamMax*dprof().actHeal);}
+function sendHealAmt(){return Math.round(teamMax*dprof().sendHeal);}
+function shopHealAmt(){return Math.round(teamMax*dprof().shopHeal);}
+function evHealAmt(n){return Math.round(n*dprof().evHeal);}
+function evHeal(n){healPlayer(evHealAmt(n));}
+function evTxt(n){const h=evHealAmt(n);return h>0?'회복 '+h+'.':'별일은 없다.';}
+function evHeal0(n){if(diffMode==='story')healPlayer(n);}                 // 본굿에선 보상 없는 거절
+function evTxt0(n){return diffMode==='story'?'회복 '+n+'.':'아무 일도 일어나지 않는다.';}
+function geumje(){return diffMode==='story'?0:+(localStorage.getItem('ms_geumje')||0);}
 function addCard(id,owner){deck.push({uid:uidSeq++,id,owner:owner||null});}
 function hasRelic(id){return relics.includes(id);}
 function wonhanTotal(){return party.reduce((s,m)=>s+(m.wh||0),0);}
@@ -3199,8 +3219,9 @@ function startBattle(sp,opts){
   setChannel(party[0].sp,true);
   if(nextBless){
     nextBless=false;
-    player.block+=8; gainStr(1);
-    setTimeout(()=>float2(SHAMAN_POS[0],SHAMAN_POS[1]-98,'명복이 함께한다 (+방어8 힘1)','#c99b3f',true),900);
+    player.block+=dprof().blessBlock; if(dprof().blessStr)gainStr(dprof().blessStr);
+    const bmsg='명복이 함께한다 (+방어'+dprof().blessBlock+(dprof().blessStr?' 힘'+dprof().blessStr:'')+')';
+    setTimeout(()=>float2(SHAMAN_POS[0],SHAMAN_POS[1]-98,bmsg,'#c99b3f',true),900);
   }
   boonFirstAtkLeft=hasBoon('seonbong')?1:0;
   if(hasBoon('gunjin'))player.block+=6;
@@ -3267,7 +3288,7 @@ async function winBattle(){
   coins+=gain; updateHUD();
   toast('엽전 +'+gain+(enemy.field==='moonless'?' (그믐밤 담력값 +8)':''));
   if(enemy.elite)gainRandomRelic();
-  if(enemy.elite||Math.random()<0.5)showDraft(); else showReward();
+  if(enemy.elite||Math.random()<dprof().gearDraft)showDraft(); else showReward();
 }
 function defeat(){
   if(!inBattle)return;
@@ -3333,7 +3354,7 @@ function renderEndParty(){
 function actClear(){
   exitBattleUI();
   if(SPIRITS[enemy.sp].final){victory();return;}
-  healPlayer(Math.round(teamMax*0.4));
+  healPlayer(actHealAmt());
   const relicId=gainRandomRelic();
   const next=ACTS[act+1];
   $('interEyebrow').textContent=ACTS[act].name+' — 끝';
@@ -3431,9 +3452,9 @@ function showReward(){
     opts.appendChild(p);
   }
   const send=document.createElement('button'); send.className='optcard';
-  send.innerHTML='<div class="pv" style="color:#c99b3f">薦</div><div class="tx"><b>천도 — 한을 풀어 보내준다</b><span>회복 '+Math.round(teamMax*0.3)+' + 최대체력 +3 + 명복(다음 전투 시작 시 방어 8·힘 1)</span></div>';
+  send.innerHTML='<div class="pv" style="color:#c99b3f">薦</div><div class="tx"><b>천도 — 한을 풀어 보내준다</b><span>회복 '+sendHealAmt()+' (체력 '+teamHP+'→'+Math.min(teamMax+dprof().sendMax,teamHP+sendHealAmt())+') + 최대체력 +'+dprof().sendMax+' + 명복(다음 전투 방어 '+dprof().blessBlock+(dprof().blessStr?'·힘 '+dprof().blessStr:'')+')</span></div>';
   send.addEventListener('click',()=>{
-    sendoffs++; gongdeok+=2; teamMax+=3; nextBless=true; healPlayer(Math.round(teamMax*0.3)); updateHUD();
+    sendoffs++; gongdeok+=2; teamMax+=dprof().sendMax; nextBless=true; healPlayer(sendHealAmt()); updateHUD();
     toast('귀신의 얼굴이 잠시 사람으로 돌아왔다… 공덕 +2',true); snd.heal();
     hide('rewardOv'); advanceMap();
   });
@@ -3544,8 +3565,8 @@ function renderShop(){
     });
   }
   if(shopStock.heal)offer('🧵','명다리',
-    '수명을 비는 무명 천. 체력 '+Math.round(teamMax*0.45)+' 회복.',30,()=>{
-      shopStock.heal=false; healPlayer(Math.round(teamMax*0.45)); updateHUD(); renderShop();
+    '수명을 비는 무명 천. 체력 '+shopHealAmt()+' 회복.',dprof().shopHealCost,()=>{
+      shopStock.heal=false; healPlayer(shopHealAmt()); updateHUD(); renderShop();
     });
   if(shopStock.rice)offer('🍡','수리취떡','할멈의 손맛. 최대체력 +5.',40,()=>{
     shopStock.rice=false; teamMax+=5; teamHP+=5; updateHUD(); snd.heal(); renderShop();
@@ -3651,7 +3672,7 @@ const NODE_META={battle:['鬼','원귀'],elite:['凶','흉귀'],event:['緣','�
 // ---------- 런 계측 (로컬 전용 — 외부 전송 없음) ----------
 let runStats=null, rsBattleTurns=0;
 function initRunStats(){
-  runStats={v:1,diff:'story',bodyGod:party[0]?party[0].sp:null,ts:Date.now(),
+  runStats={v:1,diff:diffMode,bodyGod:party[0]?party[0].sp:null,ts:Date.now(),
     acts:{0:{startHP:teamHP}},dmgTaken:0,outHeal:0,battles:0,turns:0,paths:{},
     chiseong:0,deathAct:null,win:null};
 }
@@ -3683,7 +3704,7 @@ function bindCopyStats(){
 function saveRun(){
   try{
     localStorage.setItem('ms_run',JSON.stringify({
-      mapVersion:4,mapCur,pendingHaewon,boons,
+      mapVersion:4,diff:diffMode,mapCur,pendingHaewon,boons,
       party,deck,relics,tokens,teamHP,teamMax,act,mapRows,mapPos,depth,
       kills,seals,sendoffs,sinwi,gongdeok,coins,revDone,honsuDone,uidSeq,bless:nextBless,
       runStats
@@ -3702,6 +3723,7 @@ function loadRun(){
     kills=s.kills;seals=s.seals;sendoffs=s.sendoffs;sinwi=s.sinwi;gongdeok=s.gongdeok;coins=s.coins;
     revDone=!!s.revDone;honsuDone=!!s.honsuDone;uidSeq=s.uidSeq||1000;nextBless=!!s.bless;
     runStats=s.runStats||null;
+    diffMode=s.diff||'bongut';                            // 난이도는 런에 귀속
     channeled=null;
     renderRelics();updateHUD();
     hideAll();renderMap();
@@ -4021,8 +4043,8 @@ function openHaewon(node){
 function openRest(){
   const opts=$('restOpts'); opts.innerHTML='';
   const heal=document.createElement('button'); heal.className='optcard';
-  heal.innerHTML='<div class="pv" style="color:#c99b3f">眠</div><div class="tx"><b>눈을 붙인다</b><span>체력을 '+Math.round(teamMax*0.45)+' 회복한다. 꿈자리는 보장 못 한다.</span></div>';
-  heal.addEventListener('click',()=>{healPlayer(Math.round(teamMax*0.45));updateHUD();hide('restOv');advanceMap();});
+  heal.innerHTML='<div class="pv" style="color:#c99b3f">眠</div><div class="tx"><b>눈을 붙인다</b><span>체력을 '+restHealAmt()+' 회복한다. 꿈자리는 보장 못 한다.</span></div>';
+  heal.addEventListener('click',()=>{healPlayer(restHealAmt());updateHUD();hide('restOv');advanceMap();});
   opts.appendChild(heal);
   if(party.some(m=>(m.wh||0)>0)){
     const app=document.createElement('button'); app.className='optcard';
@@ -4108,8 +4130,8 @@ function openEvent(){
     });
     opts.appendChild(a);
     const b=document.createElement('button'); b.className='optcard';
-    b.innerHTML='<div class="pv">🚶</div><div class="tx"><b>못 들은 척 지나간다</b><span>가위 소리가 등 뒤에서 멎는다. 회복 10.</span></div>';
-    b.addEventListener('click',()=>{healPlayer(10);updateHUD();hide('eventOv');advanceMap();});
+    b.innerHTML='<div class="pv">🚶</div><div class="tx"><b>못 들은 척 지나간다</b><span>가위 소리가 등 뒤에서 멎는다. '+evTxt0(10)+'</span></div>';
+    b.addEventListener('click',()=>{evHeal0(10);updateHUD();hide('eventOv');advanceMap();});
     opts.appendChild(b);
     show('eventOv'); return;
   }
@@ -4146,8 +4168,8 @@ function openEvent(){
       opts.appendChild(a);
     }
     const b=document.createElement('button'); b.className='optcard';
-    b.innerHTML='<div class="pv">🚶</div><div class="tx"><b>조용히 뒤따르다 갈라선다</b><span>망자의 길과 산 자의 길. 회복 12.</span></div>';
-    b.addEventListener('click',()=>{healPlayer(12);updateHUD();hide('eventOv');advanceMap();});
+    b.innerHTML='<div class="pv">🚶</div><div class="tx"><b>조용히 뒤따르다 갈라선다</b><span>망자의 길과 산 자의 길. '+evTxt(12)+'</span></div>';
+    b.addEventListener('click',()=>{evHeal(12);updateHUD();hide('eventOv');advanceMap();});
     opts.appendChild(b);
     show('eventOv'); return;
   }
@@ -4175,11 +4197,11 @@ function openEvent(){
       const a=document.createElement('button'); a.className='optcard';
       const pv=document.createElement('div'); pv.className='pv'; pv.appendChild(mkPortrait('cheonyeo',52));
       const tx=document.createElement('div'); tx.className='tx';
-      tx.innerHTML='<b>처녀귀신이 우물가에 선다</b><span>그녀가 오래 들여다보았다… 원한 −2, 회복 10, 공덕 +1</span>';
+      tx.innerHTML='<b>처녀귀신이 우물가에 선다</b><span>그녀가 오래 들여다보았다… 원한 −2, 회복 '+evHealAmt(10)+', 공덕 +1</span>';
       a.appendChild(pv); a.appendChild(tx);
       a.addEventListener('click',()=>{
         const m=memberOf('cheonyeo'); m.wh=Math.max(0,(m.wh||0)-2); gongdeok+=1;
-        healPlayer(10); updateHUD();
+        evHeal(10); updateHUD();
         toast('“…거기 있던 게 나였구나.” 그녀가 돌아섰다.',true); snd.heal();
         hide('eventOv'); advanceMap();
       });
@@ -4191,8 +4213,8 @@ function openEvent(){
       opts.appendChild(a);
     }
     const b=document.createElement('button'); b.className='optcard';
-    b.innerHTML='<div class="pv">🚶</div><div class="tx"><b>우물을 등지고 간다</b><span>뒤돌아보지 않는다. 회복 8.</span></div>';
-    b.addEventListener('click',()=>{healPlayer(8);updateHUD();hide('eventOv');advanceMap();});
+    b.innerHTML='<div class="pv">🚶</div><div class="tx"><b>우물을 등지고 간다</b><span>뒤돌아보지 않는다. '+evTxt(8)+'</span></div>';
+    b.addEventListener('click',()=>{evHeal(8);updateHUD();hide('eventOv');advanceMap();});
     opts.appendChild(b);
     show('eventOv'); return;
   }
@@ -4214,8 +4236,8 @@ function openEvent(){
       opts.appendChild(a);
     }
     const b=document.createElement('button'); b.className='optcard';
-    b.innerHTML='<div class="pv">👀</div><div class="tx"><b>구경만 한다</b><span>웃음소리에 긴장이 풀린다. 회복 6.</span></div>';
-    b.addEventListener('click',()=>{healPlayer(6);updateHUD();hide('eventOv');advanceMap();});
+    b.innerHTML='<div class="pv">👀</div><div class="tx"><b>구경만 한다</b><span>웃음소리에 긴장이 풀린다. '+evTxt(6)+'</span></div>';
+    b.addEventListener('click',()=>{evHeal(6);updateHUD();hide('eventOv');advanceMap();});
     opts.appendChild(b);
     show('eventOv'); return;
   }
@@ -4237,8 +4259,8 @@ function openEvent(){
     });
     opts.appendChild(a);
     const b=document.createElement('button'); b.className='optcard';
-    b.innerHTML='<div class="pv">💰</div><div class="tx"><b>노잣돈을 쥐여준다</b><span>어둠 속에서 절하는 소리가 났다. 회복 12.</span></div>';
-    b.addEventListener('click',()=>{healPlayer(12);updateHUD();hide('eventOv');advanceMap();});
+    b.innerHTML='<div class="pv">💰</div><div class="tx"><b>노잣돈을 쥐여준다</b><span>어둠 속에서 절하는 소리가 났다. '+evTxt(12)+'</span></div>';
+    b.addEventListener('click',()=>{evHeal(12);updateHUD();hide('eventOv');advanceMap();});
     opts.appendChild(b);
   }else if(ev==='blood'){
     $('evTitle').textContent='📜 피 묻은 부적';
@@ -4254,8 +4276,8 @@ function openEvent(){
     });
     opts.appendChild(a);
     const b=document.createElement('button'); b.className='optcard';
-    b.innerHTML='<div class="pv">🔥</div><div class="tx"><b>태워버린다</b><span>바람이 잠잠해진다. 회복 10.</span></div>';
-    b.addEventListener('click',()=>{healPlayer(10);updateHUD();hide('eventOv');advanceMap();});
+    b.innerHTML='<div class="pv">🔥</div><div class="tx"><b>태워버린다</b><span>바람이 잠잠해진다. '+evTxt(10)+'</span></div>';
+    b.addEventListener('click',()=>{evHeal(10);updateHUD();hide('eventOv');advanceMap();});
     opts.appendChild(b);
   }else{
     $('evTitle').textContent='🗿 서낭당';
@@ -4273,12 +4295,12 @@ function openEvent(){
       opts.appendChild(s2);
     }
     const a=document.createElement('button'); a.className='optcard';
-    a.innerHTML='<div class="pv">🙏</div><div class="tx"><b>돌을 얹고 빈다</b><span>최대체력 +4, 회복 4.</span></div>';
-    a.addEventListener('click',()=>{teamMax+=4;healPlayer(4);updateHUD();toast('무언가가 고개를 끄덕인 것 같다.');hide('eventOv');advanceMap();});
+    a.innerHTML='<div class="pv">🙏</div><div class="tx"><b>돌을 얹고 빈다</b><span>최대체력 +4, 회복 '+evHealAmt(4)+'.</span></div>';
+    a.addEventListener('click',()=>{teamMax+=4;evHeal(4);updateHUD();toast('무언가가 고개를 끄덕인 것 같다.');hide('eventOv');advanceMap();});
     opts.appendChild(a);
     const b=document.createElement('button'); b.className='optcard';
-    b.innerHTML='<div class="pv">🚶</div><div class="tx"><b>눈을 내리깔고 지나간다</b><span>숨을 고른다. 회복 15.</span></div>';
-    b.addEventListener('click',()=>{healPlayer(15);updateHUD();hide('eventOv');advanceMap();});
+    b.innerHTML='<div class="pv">🚶</div><div class="tx"><b>눈을 내리깔고 지나간다</b><span>숨을 고른다. '+evTxt(15)+'</span></div>';
+    b.addEventListener('click',()=>{evHeal(15);updateHUD();hide('eventOv');advanceMap();});
     opts.appendChild(b);
   }
   show('eventOv');
@@ -4427,10 +4449,12 @@ addEventListener('keydown',e=>{
 });
 const GEUMJE_DESC=['없음','동티 +1','동티 +1 · 적 체력 +15%','동티 +1 · 체력 +15% · 적 힘 +1'];
 const FLASH_LABEL={full:'✴ 화면 번쩍임: 전체',soft:'✴ 화면 번쩍임: 약하게',off:'✴ 화면 번쩍임: 끔'};
+const DIFF_LABEL={bongut:'⚖ 난이도: 본굿 (표준·추천)',story:'⚖ 난이도: 이야기 (관대 — 감상용)'};
 function showTitle(){
   hideAll(); stopDrone();
   $('btnMute').textContent=muted?'🔇 소리 꺼짐':'🔊 소리 켜짐';
   $('btnFlash').textContent=FLASH_LABEL[flashLevel]||FLASH_LABEL.full;
+  $('btnDiff').textContent=DIFF_LABEL[diffMode]||DIFF_LABEL.bongut;
   const w=+(localStorage.getItem('ms_wins')||0);
   const ends=['만신','성무','흑무'].filter(e=>localStorage.getItem('ms_end_'+e));
   $('titleMeta').textContent=(w>0?('🦊 귀문 봉인 '+w+'회'):'')+(ends.length?(' · 엔딩: '+ends.join(' / ')):'');
@@ -4454,6 +4478,13 @@ $('btnFlash').addEventListener('click',()=>{
   localStorage.setItem('ms_flash',flashLevel);
   snd.tap();
   $('btnFlash').textContent=FLASH_LABEL[flashLevel];
+});
+$('btnDiff').addEventListener('click',()=>{
+  diffMode=diffMode==='bongut'?'story':'bongut';
+  localStorage.setItem('ms_diff',diffMode);
+  snd.tap();
+  $('btnDiff').textContent=DIFF_LABEL[diffMode];
+  toast(diffMode==='bongut'?'본굿 — 회복이 귀하고, 실수의 대가가 다음 막까지 남는다':'이야기 — 서사를 즐기는 관대한 밤길 (금제 비활성)',true);
 });
 
 // ---------- 무대 ----------

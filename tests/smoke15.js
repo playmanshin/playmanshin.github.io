@@ -55,7 +55,8 @@ const test=`
     openDeck();
     console.log('[덱분리] 전투='+bd.length+' 대기='+bench.length);
     assert.equal(bench.length,3); assert.equal(bd.length+bench.length,deck.length);
-    // ---------- 사기 일원화: 명복·호랑이눈에도 적용 ----------
+    // ---------- 사기 일원화: 명복·호랑이눈에도 적용 (명복의 힘은 이야기 프로필에만 있음) ----------
+    diffMode='story';
     boons=['sagi']; relics=['tigereye']; nextBless=true;
     startBattle('gaekgwi');
     await sleep(1000);

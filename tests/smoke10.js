@@ -35,12 +35,15 @@ const test=`
     SPIRITS.cheonyeo.cards.forEach(c=>addCard(c,'cheonyeo'));
     console.log('[봉인풀킷] 카드 +'+(deck.length-before)+' 출전='+slotFree);
     assert.equal(deck.length-before,3); assert.equal(slotFree,true);
-    // 명복: 다음 전투 축복
+    // 명복: 다음 전투 축복 — 난이도 프로필별 수치 검증
+    assert.equal(DIFF.story.blessBlock,8); assert.equal(DIFF.story.blessStr,1);
+    assert.equal(DIFF.bongut.blessBlock,6); assert.equal(DIFF.bongut.blessStr,0);
+    diffMode='bongut';
     nextBless=true;
     startBattle('mulgwisin');
     await sleep(1000);
     console.log('[명복] block='+player.block+' str='+player.str);
-    assert.ok(player.block>=8); assert.equal(nextBless,false);
+    assert.ok(player.block>=dprof().blessBlock); assert.equal(nextBless,false);
     inBattle=false; stopDrone();
     // 음소거 무예외
     muted=true; snd.gong(); snd.jingle(); startDrone();
