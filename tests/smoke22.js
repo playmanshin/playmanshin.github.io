@@ -147,6 +147,48 @@ const test=`
     assert.equal(hand.filter(x=>x.id==='soji').length,1,'손 상한 8 — 소지 1장만');
     console.log('[지전/소지] 토큰 생성·신명 게이트·손 상한 OK');
     inBattle=false; stopDrone();
+    // ---- 5) 강신 댄스 (v0.8): 여흥·맞이굿·쌍방울 ----
+    party=[{sp:'janggun',lv:1,wh:0,active:true},{sp:'cheonyeo',lv:1,wh:2,active:true}];
+    deck=[]; relics=[];
+    for(let i=0;i<8;i++)addCard('bujeok');
+    startBattle('gaekgwi');
+    await sleep(950);
+    enemy.hp=500; enemy.max=500;
+    assert.equal(sinmyeong,0,'개전 자동 빙의(무료)는 여흥 미발동');
+    // 여흥: 전환 시 신명 +1, 턴당 1회
+    energy=3;
+    setChannel('cheonyeo',false);
+    assert.equal(energy,2,'전환 비용 1');
+    assert.equal(sinmyeong,1,'여흥 — 신명 +1');
+    setChannel('janggun',false);
+    assert.equal(sinmyeong,1,'여흥은 턴당 1회');
+    assert.equal(energy,1,'둘째 전환도 비용은 1');
+    // 맞이굿: 굿을 시전한 턴은 전환 1회 무료
+    swapSinTurn=false; gutCastTurn=false; sinmyeong=5; busy=false;
+    await castGut();
+    assert.equal(gutSwapFree,true,'맞이굿 개방');
+    const e0=energy;
+    setChannel('cheonyeo',false);
+    assert.equal(energy,e0,'맞이굿 — 무료 전환');
+    assert.equal(gutSwapFree,false,'1회 소진');
+    assert.equal(sinmyeong,1,'무료 전환에도 여흥은 발동 (턴 첫 전환)');
+    console.log('[댄스] 여흥 턴당 1회·맞이굿 무료 전환 OK');
+    // 쌍방울: 강신한 턴 다음 카드 −1 (턴당 1회)
+    relics.push('twinbell');
+    swapSinTurn=false; twinbellTurnUsed=false; swapDiscountLeft=0; energy=3;
+    setChannel('janggun',false);
+    assert.equal(swapDiscountLeft,1,'쌍방울 할인 대기');
+    const bj2={uid:uidSeq++,id:'bujeok',owner:null}; hand.push(bj2);
+    assert.equal(effCost(bj2),0,'1코 부적이 0코로');
+    await playCard(bj2,null);
+    assert.equal(energy,2,'할인 적용 — 신력 소모 0 (전환 1만 지불)');
+    assert.equal(twinbellTurnUsed,true,'턴당 1회 마킹');
+    const bj3={uid:uidSeq++,id:'bujeok',owner:null}; hand.push(bj3);
+    assert.equal(effCost(bj3),1,'할인은 첫 카드에 소진');
+    setChannel('cheonyeo',false);
+    assert.equal(swapDiscountLeft,0,'재전환에도 같은 턴엔 할인 없음');
+    console.log('[쌍방울] 전환 직후 첫 카드 할인·턴당 1회 OK');
+    inBattle=false; stopDrone();
     console.log('SMOKE_OK');
     process.exit(0);
   }catch(err){console.error('SMOKE_FAIL',err);process.exit(1);}
