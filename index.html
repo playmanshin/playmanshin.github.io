@@ -212,10 +212,14 @@
   .mapnode.msel{border-color:var(--gold); box-shadow:0 0 0 2.5px var(--gold), 2px 2px 0 rgba(0,0,0,.5); animation:none}
   .mapnode.offpath{opacity:.35}
   #mapInfo{
+    position:sticky; bottom:0; z-index:6;             /* 바텀시트 — 긴 지도에서도 화면 밖으로 밀리지 않는다 */
     margin-top:10px; padding:9px 10px; border:1.5px solid var(--gold); border-radius:8px;
     background:#241a30; font-size:11px; line-height:1.55; display:none;
+    box-shadow:0 -10px 18px rgba(11,8,18,.85);
   }
   #mapInfo b{color:var(--gold)}
+  .risktag{display:inline-block; background:#2a1620; border:1px solid #6a3040; color:#e8a0a8;
+    border-radius:4px; padding:0 5px; font-size:9px; font-weight:800; margin:3px 3px 0 0}
   .card.sel::after{
     content:'▶ 한 번 더 탭'; position:absolute; left:0; right:0; bottom:2px;
     text-align:center; font-size:8.5px; font-weight:900; color:#8a2020;
@@ -476,6 +480,7 @@
       <p class="sub" id="endText" style="margin-top:8px"></p>
       <div id="endParty" style="display:flex;justify-content:center;gap:5px;margin-top:12px;flex-wrap:wrap"></div>
       <div class="statsrow" id="endStats"></div>
+      <div id="endRunStats"></div>
       <button class="primary" id="btnEndRestart" style="width:100%;margin-top:12px">새 밤길에 나선다</button>
     </div>
   </div>
@@ -2774,6 +2779,7 @@ function healPlayer(n){
   if(hasBoon('kkotgap')&&inBattle&&enemy&&enemy.hp>0&&n>real)gainHan(Math.min(3,n-real));
   teamHP+=real;
   if(real>0){
+    if(!inBattle&&runStats)runStats.outHeal+=real;
     float2(SHAMAN_POS[0],SHAMAN_POS[1]-70,'+'+real,'#4fa86a');snd.heal();
     if(inBattle&&auraId()==='healBlock'){player.block+=2;float2(SHAMAN_POS[0],SHAMAN_POS[1]-58,'포대기 +2','#3f6a9e');}
   }
@@ -2796,6 +2802,7 @@ function dmgPlayer(n,pierce,midHit,hitPos){ // 미방어 피해량 반환. pierc
   if(pierce&&n>0)float2(SHAMAN_POS[0],SHAMAN_POS[1]-88,'관통!','#d84a3a');
   if(left>0){
     teamHP-=left; shakeT=0.25;
+    if(runStats)runStats.dmgTaken+=left;
     snd.strike('impact',hitPos||(midHit?'mid':'first'));
     duckMusic(left>=10?5:3,0.35);
     shamanHurtT=0.3;
@@ -2811,6 +2818,7 @@ function dmgPlayer(n,pierce,midHit,hitPos){ // 미방어 피해량 반환. pierc
 function dotPlayer(n){
   if(hasBoon('jeoseunggil'))n=Math.ceil(n/2);
   teamHP-=n; shakeT=0.15; snd.han();
+  if(runStats)runStats.dmgTaken+=n;
   shamanHurtT=0.16;                                    // 짧은 움찔 (화이트 플래시 없음)
   float2(SHAMAN_POS[0],SHAMAN_POS[1]-74,'-'+n+' 恨','#9a6fd0');
   if(teamHP<=0){teamHP=0;defeat();}
@@ -3007,6 +3015,7 @@ async function playCard(inst,el){
 
 // ---------- 턴 흐름 ----------
 async function endTurn(){
+  rsBattleTurns++;
   if(!inBattle||busy)return;
   selCard=null;
   if(tutStep===3){tutStep=99;localStorage.setItem('ms_tut','1');}
@@ -3151,6 +3160,8 @@ async function endTurn(){
 // ---------- 전투 시작/종료 ----------
 function startBattle(sp,opts){
   opts=opts||{};
+  rsBattleTurns=0;
+  if(opts.boss&&runStats)(runStats.acts[act]=runStats.acts[act]||{}).bossEnterHP=teamHP;
   const S=SPIRITS[sp], w=S.wild;
   const vr=opts.variant?VARIANTS[opts.variant]:null;
   const gj=geumje();
@@ -3236,6 +3247,7 @@ function gainRandomRelic(){
 }
 async function winBattle(){
   kills++;
+  if(runStats){runStats.battles++;runStats.turns+=rsBattleTurns+1;}
   enemyFx.dieT=0.7; snd.die(); duckMusic(4,0.5);
   screenFlash('white',0.1); hitStop(0.12);
   wisp(ENEMY_POS[0],ENEMY_POS[1]-46,'#8a8a96',8,40);   // 재가 흩날린다
@@ -3283,6 +3295,8 @@ function defeat(){
     :ACTS[act].name+'에서 굿판이 엎어졌다. 어둠 속에서 방울 소리만 남았다.';
   renderEndParty();
   $('endStats').innerHTML='<div><b>'+kills+'</b><span>퇴마</span></div><div><b>'+seals+'</b><span>봉인</span></div><div><b>'+sendoffs+'</b><span>천도</span></div>';
+  if(runStats){runStats.win=false;runStats.deathAct=act;}
+  $('endRunStats').innerHTML=statsSummaryHtml(); bindCopyStats();
   show('endOv');
 }
 function victory(){
@@ -3308,6 +3322,8 @@ function victory(){
   $('endText').textContent=text;
   renderEndParty();
   $('endStats').innerHTML='<div><b>'+sinwi+'</b><span>신위</span></div><div><b>'+gongdeok+'</b><span>공덕</span></div><div><b>'+kills+'</b><span>퇴마</span></div>';
+  if(runStats)runStats.win=true;
+  $('endRunStats').innerHTML=statsSummaryHtml(); bindCopyStats();
   show('endOv');
 }
 function renderEndParty(){
@@ -3350,7 +3366,9 @@ function actClear(){
 $('btnInterGo').addEventListener('click',()=>{
   if($('btnInterGo').disabled)return;
   hide('interOv');
-  act++; genMap(); renderMap(); updateHUD();
+  act++; genMap();
+  if(runStats)runStats.acts[act]={startHP:teamHP};
+  renderMap(); updateHUD();
 });
 $('btnInterLineup').addEventListener('click',()=>{
   hide('interOv');
@@ -3450,6 +3468,7 @@ function openPick(mode,ret){
     b.appendChild(pv); b.appendChild(tx);
     b.addEventListener('click',()=>{
       if(pickMode==='chiseong'){
+        if(runStats)runStats.chiseong++;
         if(m.lv>=2){teamMax+=6;teamHP+=6;toast('최대체력 +6');}
         else{m.lv=2;snd.gong();toast(S.name+'의 부적에 핏빛 획이 더해졌다',true);}
       }else if(pickMode==='release'){
@@ -3629,12 +3648,45 @@ function genMap(){
   }
 }
 const NODE_META={battle:['鬼','원귀'],elite:['凶','흉귀'],event:['緣','기연'],rest:['木','당산목'],shop:['市','장터'],boss:['門','문지기']};
+// ---------- 런 계측 (로컬 전용 — 외부 전송 없음) ----------
+let runStats=null, rsBattleTurns=0;
+function initRunStats(){
+  runStats={v:1,diff:'story',bodyGod:party[0]?party[0].sp:null,ts:Date.now(),
+    acts:{0:{startHP:teamHP}},dmgTaken:0,outHeal:0,battles:0,turns:0,paths:{},
+    chiseong:0,deathAct:null,win:null};
+}
+function rsPath(t){if(runStats)runStats.paths[t]=(runStats.paths[t]||0)+1;}
+function statsSummaryHtml(){
+  if(!runStats)return '';
+  const avg=runStats.battles?(runStats.turns/runStats.battles).toFixed(1):'—';
+  const acts=Object.keys(runStats.acts).sort().map(a=>{
+    const A=runStats.acts[a];
+    return (+a+1)+'막 '+(A.startHP!==undefined?A.startHP:'?')+(A.bossEnterHP!==undefined?'→보스 '+A.bossEnterHP:'');
+  }).join(' · ');
+  return '<div class="sub" style="margin-top:10px;text-align:left;line-height:1.75">'+
+    '평균 전투 '+avg+'턴 · 받은 피해 '+runStats.dmgTaken+' · 전투 외 회복 '+runStats.outHeal+'<br>'+
+    '봉인 '+seals+' · 천도 '+sendoffs+' · 치성 '+runStats.chiseong+'<br>'+
+    '막별 체력: '+acts+'</div>'+
+    '<button id="btnCopyStats" style="width:100%;margin-top:8px">📋 야행 기록 복사 (JSON)</button>';
+}
+function bindCopyStats(){
+  const b=document.getElementById('btnCopyStats'); if(!b)return;
+  b.addEventListener('click',()=>{
+    const j=JSON.stringify(Object.assign({},runStats,{seals,sendoffs,kills,sinwi,gongdeok}));
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(j);
+      else{const t=document.createElement('textarea');t.value=j;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();}
+      toast('야행 기록을 복사했다');
+    }catch(e){toast('복사 실패 — 콘솔에 남겼다');console.log(j);}
+  });
+}
 function saveRun(){
   try{
     localStorage.setItem('ms_run',JSON.stringify({
-      mapVersion:3,mapCur,pendingHaewon,boons,
+      mapVersion:4,mapCur,pendingHaewon,boons,
       party,deck,relics,tokens,teamHP,teamMax,act,mapRows,mapPos,depth,
-      kills,seals,sendoffs,sinwi,gongdeok,coins,revDone,honsuDone,uidSeq,bless:nextBless
+      kills,seals,sendoffs,sinwi,gongdeok,coins,revDone,honsuDone,uidSeq,bless:nextBless,
+      runStats
     }));
   }catch(e){}
 }
@@ -3643,12 +3695,13 @@ function loadRun(){
   try{
     const s=JSON.parse(localStorage.getItem('ms_run'));
     if(!s||!s.party||!s.party.length)return false;
-    if(s.mapVersion!==3){clearRun();return false;}       // 구버전 저장은 폐기
+    if(s.mapVersion!==4){clearRun();return false;}       // 구버전 저장은 폐기
     mapCur=s.mapCur||0; pendingHaewon=s.pendingHaewon||[]; boons=s.boons||[];
     party=s.party;deck=s.deck;relics=s.relics||[];tokens=s.tokens||[];
     teamHP=s.teamHP;teamMax=s.teamMax;act=s.act;mapRows=s.mapRows;mapPos=s.mapPos;depth=s.depth;
     kills=s.kills;seals=s.seals;sendoffs=s.sendoffs;sinwi=s.sinwi;gongdeok=s.gongdeok;coins=s.coins;
     revDone=!!s.revDone;honsuDone=!!s.honsuDone;uidSeq=s.uidSeq||1000;nextBless=!!s.bless;
+    runStats=s.runStats||null;
     channeled=null;
     renderRelics();updateHUD();
     hideAll();renderMap();
@@ -3725,21 +3778,52 @@ function nodeSummary(node){
   if(node.field)parts.push('⚑ '+FIELDS[node.field].name+': '+FIELDS[node.field].desc);
   return parts.join('<br>');
 }
-function mapNodeTap(r,i){
-  if(!reachableNext(r,i))return;
-  if(mapSel&&mapSel.r===r&&mapSel.i===i){   // 두 번째 탭: 확정
-    const info=$('mapInfo'); info.style.display='none'; mapSel=null;
-    chooseNode(r,i); return;
+// 위험 태그 — 적 패턴에서 유도해 지도에 예고한다 (경로 전략의 재료)
+function riskTags(sp,variant){
+  const S=SPIRITS[sp]; if(!S)return [];
+  const t=new Set();
+  for(const mv of (S.wild&&S.wild.pat)||[]){
+    if((mv.h||0)>=2)t.add('연타');
+    if(mv.t)t.add('반사');
+    if(mv.pc)t.add('관통');
+    if(mv.c||mv.d)t.add('저주');
+    if(mv.s)t.add('성장');
+    if(mv.dr)t.add('흡혈');
+    if(mv.ar)t.add('철갑');
+    if(mv.g)t.add('회복');
+    if(mv.m!==undefined)t.add('거울');
   }
-  mapSel={r,i}; snd.tap();                   // 첫 탭: 살펴보기
-  const node=mapRows[r][i];
+  if(S.escalate)t.add('성장');
+  if(S.centi)t.add('연타');
+  if(variant==='hungry')t.add('흡혈');
+  return [...t];
+}
+function confirmNode(r,i){                   // 확정은 오직 이 경로로만
+  if(!reachableNext(r,i))return;
+  $('mapInfo').style.display='none'; mapSel=null;
+  chooseNode(r,i);
+}
+function mapNodeTap(r,i){
+  if(r<=mapPos)return;                       // 지나온 길
+  mapSel={r,i}; snd.tap();                   // 탭은 언제나 미리보기 — 확정은 버튼으로만
+  const node=mapRows[r][i], go=reachableNext(r,i);
   const info=$('mapInfo');
+  const tsp=node.enemy?node.enemy.sp:(node.t==='boss'?ACTS[act].boss:null);
+  const tags=tsp?riskTags(tsp,node.enemy&&node.enemy.variant):[];
   info.innerHTML=nodeSummary(node)+
-    '<button class="primary" style="width:100%;margin-top:8px;padding:9px" id="btnGoNode">▶ 이 길로 간다</button>';
+    (tags.length?'<div style="margin-top:2px">'+tags.map(x=>'<span class="risktag">'+x+'</span>').join('')+'</div>':'')+
+    (go
+      ?'<button class="primary" style="width:100%;margin-top:8px;padding:9px" id="btnGoNode">▶ '+(mapPos===-1?'첫 굿판 시작':'이 길로 간다')+'</button>'+
+       '<button id="btnOtherNode" style="width:100%;margin-top:6px;padding:7px">다른 길 보기</button>'+
+       '<p class="sub" style="margin-top:6px;text-align:center">확정 전에는 다른 길을 고를 수 있다 · <b style="color:#e88a7a">길을 나서면 돌아올 수 없다</b></p>'
+      :'<p class="sub" style="margin-top:8px;text-align:center">먼 길 — 아직 발이 닿지 않는다 (살펴보기만)</p>');
   info.style.display='block';
-  document.getElementById('btnGoNode').addEventListener('click',()=>{
-    info.style.display='none'; mapSel=null; chooseNode(r,i);
-  });
+  if(go){
+    document.getElementById('btnGoNode').addEventListener('click',()=>confirmNode(r,i));
+    document.getElementById('btnOtherNode').addEventListener('click',()=>{
+      info.style.display='none'; mapSel=null; refreshMapMarks(); snd.tap();
+    });
+  }
   refreshMapMarks();
 }
 function refreshMapMarks(){
@@ -3783,7 +3867,8 @@ function renderMap(){
       if(r<=mapPos)b.classList.add('done');
       if(r===mapPos&&node.chosen)b.classList.add('cur');
       if(node.enemy&&TOKEN_OF[node.enemy.sp]&&tokens.includes(TOKEN_OF[node.enemy.sp])&&!memberOf(node.enemy.sp))b.classList.add('hae');
-      if(reachableNext(r,i)){b.classList.add('next');b.addEventListener('click',()=>mapNodeTap(r,i));}
+      if(reachableNext(r,i))b.classList.add('next');
+      if(r>mapPos)b.addEventListener('click',()=>mapNodeTap(r,i));   // 미래 노드도 살펴보기는 가능
       else b.disabled=true;
       rowEl.appendChild(b);
       mapNodeEls[r][i]=b;
@@ -3794,7 +3879,7 @@ function renderMap(){
   show('mapOv');
   if(act===0&&mapPos===-1&&!localStorage.getItem('ms_tut3')){
     localStorage.setItem('ms_tut3','1');
-    setTimeout(()=>toast('🗺 밝은 길만 갈 수 있다 — 노드를 탭해 살펴보고, 한 번 더 탭해 나선다',true),900);
+    setTimeout(()=>toast('🗺 노드를 탭해 살펴보라 — 「이 길로 간다」를 누르기 전엔 얼마든지 다른 길을 볼 수 있다',true),900);
   }
   requestAnimationFrame(drawMapLines);
 }
@@ -3841,7 +3926,7 @@ function chooseNode(r,i){
   snd.tap();
   mapRows[r].forEach(n=>n.chosen=false);
   const node=mapRows[r][i];
-  node.chosen=true;
+  node.chosen=true; rsPath(node.t);
   mapPos=r; mapCur=i; depth=act*ROWS_PER_ACT+r;
   hide('mapOv');
   if(node.t==='battle'){
@@ -4306,6 +4391,7 @@ function newRun(){
       sinwi=0; gongdeok=0; coins=15; sinmyeong=0; boons=[]; boonFirstAtkLeft=0;
       revDone=false; honsuDone=false;
       act=0; depth=0; channeled=null;
+      initRunStats();
       renderRelics();
       snd.gong();
       toast(S.name+josa(S.name,'이','가')+' 몸주신으로 내렸다',true);

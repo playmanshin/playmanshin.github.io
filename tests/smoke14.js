@@ -24,11 +24,13 @@ const test=`
     mapNodeEls=mapRows.map(r=>r.map(()=>mkishBtn()));
     function mkishBtn(){return document.createElement('button');}
     mapNodeTap(0,0);
-    console.log('[지도2탭] 첫 탭 선택='+(mapSel?mapSel.r+','+mapSel.i:'없음'));
+    console.log('[지도미리보기] 첫 탭 선택='+(mapSel?mapSel.r+','+mapSel.i:'없음'));
     assert.ok(mapSel&&mapSel.r===0&&mapSel.i===0); assert.equal(inBattle,false);
-    mapNodeTap(0,0);
+    mapNodeTap(0,0);                              // 재탭도 미리보기 — 확정은 버튼으로만
+    assert.equal(inBattle,false);
+    confirmNode(0,0);
     await sleep(1000);
-    console.log('[지도2탭] 둘째 탭 전투='+inBattle);
+    console.log('[지도확정] confirmNode 전투='+inBattle);
     assert.equal(inBattle,true);
     // 후손 집합
     const ds=descendantSet(0,0);
