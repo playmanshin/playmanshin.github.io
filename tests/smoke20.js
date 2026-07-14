@@ -119,8 +119,11 @@ const test=`
     assert.ok(document.getElementById('deckTitle').textContent.includes('+동티 2'),'덱 화면 동티 표기');
     localStorage.setItem('ms_geumje','0');
     console.log('[동티통일] HUD·덱 화면 2장 OK');
-    // 11) TIP 8종 전부 실제 tip() 호출에 배선되어 있다 (소스 검증)
-    for(const id of TIP_IDS)assert.ok(src.includes("tip('"+id+"'"),id+' 팁 미배선');
+    // 11) TIP 8종 전부 배선. 첫 전투 2종은 지속형 코치가 직접 seen 키를 기록하고, 나머지는 tip() 토스트를 쓴다.
+    for(const id of TIP_IDS){
+      const wired=(id==='card_play'||id==='intent')?src.includes("ms_tip_"+id):src.includes("tip('"+id+"'");
+      assert.ok(wired,id+' 팁 미배선');
+    }
     console.log('[팁배선] 8종 전수 OK');
     inBattle=false; stopDrone();
     console.log('SMOKE_OK');

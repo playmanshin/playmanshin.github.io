@@ -10,7 +10,7 @@ const ctxStub=new Proxy({},{
 });
 function mkEl(){
   return {classList:{add:noop,remove:noop,toggle:noop},style:{},textContent:'',innerHTML:'',disabled:false,
-    addEventListener:noop,appendChild:noop,isConnected:false,width:0,height:0,
+    addEventListener:noop,appendChild:noop,setAttribute:noop,hidden:false,tabIndex:0,isConnected:false,width:0,height:0,
     getContext:()=>ctxStub,
     getBoundingClientRect:()=>({left:0,top:0,width:360,height:640})};
 }
