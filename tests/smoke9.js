@@ -63,7 +63,9 @@ const test=`
     assert.equal(ehp3-enemy.hp,31); assert.equal(energy,0);   // 3타×9 + 낙인4(카드당 1회)
     // 콤보: cardsPlayed 리셋 후 2장 내고 3장째 삼재풀이
     cardsPlayed=0; energy=3;
-    await playCard(inHand('jeomgwae'),null);   // 점괘 (드로우+스크라이 무예외)
+    const jp=playCard(inHand('jeomgwae'),null);   // 점괘 — 이지선다 대기 (v0.10)
+    for(let i=0;i<40&&!scryResolver;i++)await sleep(30);
+    resolveScry(false); await jp;
     await playCard(inHand('suhobu'),null);
     const ehp4=enemy.hp;
     await playCard(inHand('samjaepuri'),null);

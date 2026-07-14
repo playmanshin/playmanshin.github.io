@@ -528,6 +528,17 @@
     </div>
   </div>
 
+  <!-- 점괘 — 덱 위 3장 이지선다 (v0.10) -->
+  <div class="overlay dark hidden" id="scryOv">
+    <div style="height:24px"></div>
+    <div class="sheet" style="max-width:334px">
+      <h2 style="text-align:center;font-size:16px">☰ 점괘 — 덱 위를 읽는다</h2>
+      <div class="deckgrid" id="scryList"></div>
+      <button id="btnScryKeep" class="primary" style="width:100%;margin-top:11px">그대로 둔다</button>
+      <button id="btnScryBury" style="width:100%;margin-top:8px">전부 파묻는다 — 버린 더미로</button>
+    </div>
+  </div>
+
   <!-- 카드 소각 -->
   <div class="overlay dark hidden" id="burnOv">
     <div style="height:24px"></div>
@@ -956,6 +967,20 @@ function hapState(){
   if(b&&ghosts.some(g=>axOf(g.sp)===b))out.push({big:false,ax:b});
   return out;
 }
+// ---------- 동행(同行) — 출전 승리의 적립 (v0.10) ----------
+// 벤치로 내려도 유지(자본 보존), 출전 중에만 적립(기회비용) — 갈아타기는 몰수가 아니라 "시간을 잃는" 선택.
+// 동행 3 = 신기 성숙(주축의 소합급 개전 보너스, 恨은 개전 예산 6 경유) / 동행 6 = 굿거리 성숙(수치 +25%, 타수·이진 효과 불변)
+const BOND_MATURE=3, BOND_GUT=6;
+function accrueBond(){
+  const msgs=[];
+  party.filter(m=>SPIRITS[m.sp].ghost&&m.active).forEach(m=>{
+    m.bond=(m.bond||0)+1;
+    const nm=SPIRITS[m.sp].name;
+    if(m.bond===BOND_MATURE)msgs.push(nm+josa(nm,'과','와')+' 정이 들었다 — 신기가 깊어진다');
+    if(m.bond===BOND_GUT)msgs.push(nm+'의 대목이 무르익었다 — 굿거리 성숙');
+  });
+  return msgs;
+}
 // 굿거리 듀엣 — 몸주·출전 편성에 따라 대목이 자란다 (v0.9). castGut·신단 설명이 공용
 function gutFxOf(sp){
   const g=GUTS[sp]; if(!g)return null;
@@ -965,6 +990,11 @@ function gutFxOf(sp){
   if(sp==='jeoseungsaja'&&party.length&&party[0].sp==='bari'){f.pctDmg=0.25;note='저승길 동무 — 비례 피해 25% (상한 18)';}
   if(sp==='gaekgwi'&&party.length&&party[0].sp==='samsinhalmi'){f.heal=16;note='제삿밥 한 상 — 회복 16';}
   if(sp==='dalgyal'&&party.length&&party[0].sp==='chilseong'){f.draw=4;note='무면이 별을 센다 — 드로우 4';}
+  const bm=memberOf(sp);
+  if(bm&&(bm.bond||0)>=BOND_GUT){   // 동행 성숙은 듀엣 위에 얹힌다 (恨은 gainHan 캡, 타수는 불변 — 다단×배율 금지 원칙)
+    ['dmg','block','heal','dot','weak','strDown','draw','energy'].forEach(k=>{if(f[k])f[k]=Math.ceil(f[k]*1.25);});
+    note=(note?note+' · ':'')+'동행 성숙 — 대목이 깊어졌다';
+  }
   return {fx:f,note};
 }
 function gearRar(id){return GEAR_RAR[id]||'c';}
@@ -1368,7 +1398,7 @@ function cardDesc(v,curse,def){
   if(v.xDmg)p.push('신력을 모두 소모, 1당 피해 '+v.xDmg+'의 일격 (최대 4타)');
   if(v.xBlock)p.push('신력을 모두 소모, 1당 방어 '+v.xBlock);
   if(v.comboDmg)p.push('이 카드가 이번 턴 '+v.comboNeed+'장째 이후면 피해 '+v.comboDmg+', 아니면 '+v.comboLo);
-  if(v.scry)p.push('덱 위 '+v.scry+'장을 본다');
+  if(v.scry)p.push('덱 위 '+v.scry+'장을 보고, 그대로 두거나 전부 버린 더미로 보낸다');
   if(v.hpCost)p.push('제물: 체력 '+v.hpCost);
   if(v.dmg)p.push('피해 '+v.dmg+(v.hits>1?' ×'+v.hits:''));
   if(v.blockDmg)p.push('지닌 방어만큼 피해 (최대 '+v.blockDmg+')');
@@ -2488,8 +2518,8 @@ function pixelate(key,drawFn,t){
   }
   return c;
 }
-function drawPixelSprite(key,drawFn,x,y,scale,flip,alpha,sqX,sqY,white,dissolve){
-  const p=pixelate(key,drawFn,animT);
+function drawPixelSprite(key,drawFn,x,y,scale,flip,alpha,sqX,sqY,white,dissolve,sampleT){
+  const p=pixelate(key,drawFn,sampleT===undefined?animT:sampleT);
   ctx.save();
   ctx.imageSmoothingEnabled=false;
   ctx.translate(x,y);
@@ -2714,7 +2744,7 @@ function toast(msg,long){
 }
 function show(id){$(id).classList.remove('hidden');}
 function hide(id){$(id).classList.add('hidden');}
-const ALL_OV=['titleOv','starterOv','mapOv','draftOv','rewardOv','restOv','eventOv','pickOv','burnOv','deckOv','altarOv','interOv','endOv','helpOv'];
+const ALL_OV=['titleOv','starterOv','mapOv','draftOv','rewardOv','restOv','eventOv','pickOv','burnOv','scryOv','deckOv','altarOv','interOv','endOv','helpOv'];
 function hideAll(){ALL_OV.forEach(hide);}
 
 // ---------- 연출 ----------
@@ -2792,6 +2822,24 @@ const SPRITE_META={
 function spriteMeta(sp){
   const b=SPIRITS[sp]&&SPIRITS[sp].boss;
   return Object.assign({scale:b?1.42:1.25,hitY:b?58:40,motion:'wraith'},SPRITE_META[sp]||{});
+}
+// 귀신 체형별 유휴 자세. 좌표·스케일·잔상을 한 계산으로 묶어 모션 언어와 감소 설정을 일치시킨다.
+function hauntPose(motion,t,seed,reduced){
+  if(reduced)return {bob:0,dx:0,alpha:1,sqx:1,sqy:1,tear:false};
+  const s=seed||0;
+  if(motion==='wraith'){
+    const phase=(t*1.3+s)%4.2;
+    return {bob:Math.round(Math.sin(t*1.3+s)*3.5),dx:Math.sin(t*0.8+s)*2.2,
+      alpha:0.92+Math.sin(t*2.7+s)*0.08,sqx:1,sqy:1,tear:phase<0.11};
+  }
+  if(motion==='giant'){
+    const loom=0.5+Math.sin(t*0.62+s)*0.5;
+    return {bob:Math.round(Math.sin(t*0.9+s)*0.8),dx:0,alpha:1,
+      sqx:1+loom*0.018,sqy:1-loom*0.012,tear:false};
+  }
+  const breath=Math.sin(t*2.6+s);
+  return {bob:Math.round(breath*1.2),dx:0,alpha:1,
+    sqx:1+breath*0.025,sqy:1-breath*0.035,tear:false};
 }
 function float2(x,y,txt,color,big){floats.push({x,y,txt,color,age:0,big:!!big});}
 function burst(x,y,color,n){for(let i=0;i<(n||8);i++){const a=Math.random()*TAU,v=40+Math.random()*70;sparks.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-30,color,age:0});}}
@@ -3529,9 +3577,17 @@ async function playCard(inst,el){
     float2(SHAMAN_POS[0],SHAMAN_POS[1]-70,'큰절 +'+bn+' 방어','#3f6a9e');
     if(hasBoon('yongteullim')){player.nextAtk+=1;float2(SHAMAN_POS[0],SHAMAN_POS[1]-84,'용틀임 공수 +1','#c99b3f');}
   }
-  if(v.scry){
-    const names=drawPile.slice(-v.scry).reverse().map(x=>CARDS[x.id].name);
-    toast('점괘: '+(names.length?names.join(' → '):'덱이 비어 있다'),true);
+  if(v.scry){   // 점괘 이지선다 (v0.10) — 전투 중 첫 인터랙티브 선택. 대상 선택이 아닌 전부/유지 양자택일 (헌법 준수)
+    const top=drawPile.slice(-v.scry).reverse();   // [0]이 맨 위
+    if(!top.length)toast('점괘: 덱이 비어 있다',true);
+    else{
+      const bury=await scryChoice(top);
+      if(bury){
+        drawPile.length-=top.length;
+        discard.push(...top);
+        float2(SHAMAN_POS[0],SHAMAN_POS[1]-92,'파묻는다 — '+top.length+'장','#9a6fd0'); snd.curse();
+      }else float2(SHAMAN_POS[0],SHAMAN_POS[1]-92,'그대로 둔다','#8a8a96');
+    }
   }
   if(v.power){
     if(powers.some(p=>p.k===v.power.k&&p.label===v.power.label)){
@@ -3834,7 +3890,21 @@ function startBattle(sp,opts){
         case 'sal':{enemy.weak+=h.big?2:1;hapMsgs.push(tag+' 약화 '+(h.big?2:1));break;}
       }
     });
-    if(hapMsgs.length)setTimeout(()=>toast('⚭ 합(合)이 맞는다 — '+hapMsgs.join(' · '),true),1100);
+    // 동행 성숙(3+): 주축의 소합급 개전 보너스 — 개전 恨 예산(6) 구간 안에서 적용 (v0.10)
+    party.filter(m=>SPIRITS[m.sp].ghost&&m.active&&(m.bond||0)>=BOND_MATURE).forEach(m=>{
+      const ax=(SPIRIT_AX[m.sp]||[])[0]; if(!ax)return;
+      const nm=SPIRITS[m.sp].name;
+      switch(ax){
+        case 'han':{const got=gainHan(2);if(got)hapMsgs.push('동행·'+nm+' 恨 +'+got);break;}
+        case 'block':player.block+=3;hapMsgs.push('동행·'+nm+' 방어 +3');break;
+        case 'heal':healPlayer(3);hapMsgs.push('동행·'+nm+' 회복 3');break;
+        case 'engine':hapDraw+=1;hapMsgs.push('동행·'+nm+' 드로우 +1');break;
+        case 'str':player.nextAtk+=3;hapMsgs.push('동행·'+nm+' 공수 +3');break;
+        case 'sal':enemy.weak+=1;hapMsgs.push('동행·'+nm+' 약화 1');break;
+        case 'curse':discard.push({uid:uidSeq++,id:'dongti',owner:null});hapMsgs.push('동행·'+nm+' 동티 연료 +1');break;
+      }
+    });
+    if(hapMsgs.length)setTimeout(()=>toast('⚭ 개전의 합 — '+hapMsgs.join(' · '),true),1100);
   }
   openHanLeft=-1;   // 개전 구간 종료 — 이후 전투 중 恨은 예산 무관
   startDrone();
@@ -3880,6 +3950,8 @@ async function winBattle(){
   kills++;
   if(runStats){runStats.battles++;runStats.turns+=rsBattleTurns+1;}
   rsEndCombat(true);
+  const bondMsgs=accrueBond();   // 동행 적립 — 출전 귀신만 (v0.10)
+  if(bondMsgs.length)setTimeout(()=>toast('⚯ '+bondMsgs.join(' · '),true),1900);
   enemyFx.dieT=0.7; snd.die(); duckMusic(4,0.5);
   screenFlash('white',0.1); hitStop(0.12);
   wisp(ENEMY_POS[0],ENEMY_POS[1]-46,'#8a8a96',8,40);   // 재가 흩날린다
@@ -3927,7 +3999,23 @@ function defeat(){
   $('endRunStats').innerHTML=statsSummaryHtml(); bindCopyStats();
   show('endOv');
 }
+// 합굿 도감 — 몸주×출전 귀신 조합의 최고 금제 기록 (메타 저장, 런 저장·mapVersion 무관) (v0.10)
+function recordDuets(){
+  try{
+    const d=JSON.parse(localStorage.getItem('ms_duet')||'{}');
+    const g=geumje()+1;   // 기록값 = 클리어한 금제 단계 +1 (이야기·금제0 클리어 = 1)
+    let fresh=0;
+    party.filter(m=>SPIRITS[m.sp].ghost&&m.active).forEach(m=>{
+      const k=party[0].sp+':'+m.sp;
+      if(!d[k])fresh++;
+      d[k]=Math.max(d[k]||0,g);
+    });
+    localStorage.setItem('ms_duet',JSON.stringify(d));
+    return {total:Object.keys(d).length,fresh};
+  }catch(e){return {total:0,fresh:0};}
+}
 function victory(){
+  const duetRec=recordDuets();
   clearRun();
   exitBattleUI();
   localStorage.setItem('ms_wins',+(localStorage.getItem('ms_wins')||0)+1);
@@ -3952,7 +4040,9 @@ function victory(){
   $('endStats').innerHTML='<div><b>'+sinwi+'</b><span>신위</span></div><div><b>'+gongdeok+'</b><span>공덕</span></div><div><b>'+kills+'</b><span>퇴마</span></div>';
   if(runStats)runStats.win=true;
   rsFinal();
-  $('endRunStats').innerHTML=statsSummaryHtml(); bindCopyStats();
+  $('endRunStats').innerHTML='<p class="sub" style="text-align:center">⚯ 합굿 도감 '+duetRec.total+'/108'
+    +(duetRec.fresh?' — 새 인연 '+duetRec.fresh+'!':'')+'</p>'+statsSummaryHtml();
+  bindCopyStats();
   show('endOv');
 }
 function renderEndParty(){
@@ -4246,6 +4336,32 @@ function renderShop(){
   show('eventOv');
 }
 
+// ---------- 점괘 이지선다 (v0.10) ----------
+// Promise 기반 — playCard가 선택까지 대기(busy 유지). 테스트는 resolveScry()로 직접 응답 가능
+let scryResolver=null;
+function resolveScry(bury){
+  if(!scryResolver)return;
+  const r=scryResolver; scryResolver=null;
+  hide('scryOv');
+  r(!!bury);
+}
+function scryChoice(cards){
+  return new Promise(res=>{
+    scryResolver=res;
+    const list=$('scryList'); list.innerHTML='';
+    cards.forEach(inst=>{
+      const d=CARDS[inst.id], v=cardVals(inst);
+      const el=document.createElement('div'); el.className='minicard';
+      el.innerHTML='<div class="band" style="background:'+(inst.owner?SPIRITS[inst.owner].col:(d.curse?'#2a2036':'#6e5220'))+'">'+d.name+(isUp(inst)?'+':'')+'</div>'+
+        '<div class="b2">'+cardDesc(v,!!d.curse,d)+'</div>';
+      list.appendChild(el);
+    });
+    show('scryOv');
+  });
+}
+$('btnScryKeep').addEventListener('click',()=>{snd.tap();resolveScry(false);});
+$('btnScryBury').addEventListener('click',()=>{snd.curse();resolveScry(true);});
+
 // ---------- 카드 소각 ----------
 let burnFrom='rest', burnKind='burn';
 function openBurn(from){
@@ -4402,7 +4518,8 @@ function rsFinal(){
   runStats.final={hp:teamHP,maxHP:teamMax,deckSize:deck.length,
     upgradedCards:deck.filter(c=>isUp(c)).length,
     relicCount:relics.length,activeSpirits:activeMembers().map(m=>m.sp),boons:boons.slice(),
-    deckList:deck.map(c=>c.id+(isUp(c)?'+':''))};   // v3: 승리덱 등장률 계측용
+    deckList:deck.map(c=>c.id+(isUp(c)?'+':'')),   // v3: 승리덱 등장률 계측용
+    bonds:party.filter(m=>SPIRITS[m.sp].ghost).map(m=>m.sp+':'+(m.bond||0))};   // v0.10: 동행 분포 계측
 }
 function rsPath(t){if(runStats)runStats.paths[t]=(runStats.paths[t]||0)+1;}
 function statsSummaryHtml(){
@@ -5099,8 +5216,13 @@ function openAltar(editable,returnFn){
     const pv=document.createElement('div'); pv.className='pv'; pv.appendChild(mkPortrait(m.sp,52));
     const tx=document.createElement('div'); tx.className='tx';
     const axc=SPIRIT_AX[m.sp]?' <span class="lvtag" style="background:#3a3450;color:#c9b8e0">'+AX_LABEL[SPIRIT_AX[m.sp][0]]+'</span>':'';
+    const bd=SPIRITS[m.sp].ghost?Math.min(BOND_GUT,m.bond||0):0;
+    const bondTag=SPIRITS[m.sp].ghost
+      ?' <span class="lvtag" style="background:#2a2438;color:#c9b8e0">동행 '+'●'.repeat(bd)+'○'.repeat(BOND_GUT-bd)+'</span>'
+        +((m.bond||0)>=BOND_GUT?' <span class="lvtag" style="background:#8a6210">대목 성숙</span>':((m.bond||0)>=BOND_MATURE?' <span class="lvtag" style="background:#5e3a8a">신기 성숙</span>':''))
+      :'';
     const tags=(m.lv>=2?' <span class="lvtag">치성</span>':'')+((m.wh||0)>0?' <span class="whtag">원한 '+m.wh+'</span>':'')
-      +(m.haewon?' <span class="lvtag" style="background:#4fa86a;color:#0c2814">해원</span>':'');
+      +(m.haewon?' <span class="lvtag" style="background:#4fa86a;color:#0c2814">해원</span>':'')+bondTag;
     const stat=SPIRITS[m.sp].ghost?(m.active?' <span class="lvtag" style="background:#c99b3f">출전</span>':' <span class="whtag" style="background:#3a3450;color:#9c8fae">대기</span>'):' <span class="lvtag" style="background:#8a2020;color:#f0d9c9">몸주신</span>';
     const gn=GUTS[m.sp]?gutFxOf(m.sp):null;
     tx.innerHTML='<b><span class="tdot" style="background:'+S.col+'"></span>'+S.name+axc+tags+stat+'</b>'+
@@ -5249,7 +5371,8 @@ function showTitle(){
   newGateArmed=false; $('btnNew').textContent='내림굿을 올린다 — 새 굿';
   const w=+(localStorage.getItem('ms_wins')||0);
   const ends=['만신','성무','흑무'].filter(e=>localStorage.getItem('ms_end_'+e));
-  $('titleMeta').textContent=(w>0?('封 귀문 봉인 '+w+'회'):'')+(ends.length?(' · 엔딩: '+ends.join(' / ')):'');
+  let duetN=0; try{duetN=Object.keys(JSON.parse(localStorage.getItem('ms_duet')||'{}')).length;}catch(e){}
+  $('titleMeta').textContent=(w>0?('封 귀문 봉인 '+w+'회'):'')+(ends.length?(' · 엔딩: '+ends.join(' / ')):'')+(duetN?(' · ⚯ 합굿 '+duetN+'/108'):'');
   const cont=$('btnCont');
   const hasRun=!!localStorage.getItem('ms_run');
   cont.style.display=hasRun?'block':'none';
@@ -5290,7 +5413,97 @@ $('btnDiff').addEventListener('click',()=>{
 // ---------- 무대 ----------
 const STARS=[];
 for(let i=0;i<36;i++)STARS.push({x:Math.random()*VW,y:Math.random()*140,r:Math.random()*1.1+0.3,p:Math.random()*6.28});
-function drawProp(A){
+const OMEN_OFFSET={jangseung:0,hanok:4.5,mounds:9,gate:13};
+function omenState(prop,t,reduced){
+  const tt=reduced?0:t, phase=((tt+(OMEN_OFFSET[prop]||0))%18+18)%18;
+  const walk=phase>10&&phase<14?Math.sin((phase-10)/4*Math.PI):0;
+  const rise=phase>4.5&&phase<8?Math.sin((phase-4.5)/3.5*Math.PI):0;
+  const blink=!reduced&&(phase<0.16||(phase>0.34&&phase<0.46));
+  return {phase,walk,rise,blink,veil:reduced?0:Math.sin(tt*0.72+(OMEN_OFFSET[prop]||0))*2};
+}
+// 원경의 징조는 전투 정보보다 어둡게 유지한다. 모든 형상은 블록 실루엣으로만 그린다.
+function drawOmenLayer(A,t){
+  const o=omenState(A.prop,t,REDUCED);
+  ctx.save();
+  if(o.walk>0){                                                        // 능선을 가로지르는 사람 아닌 것
+    const x=Math.round(-18+396*((o.phase-10)/4));
+    ctx.globalAlpha=0.10+o.walk*0.16;
+    ctx.fillStyle='#050408';
+    ctx.fillRect(x-3,119,7,7);ctx.fillRect(x-5,126,11,24);
+    ctx.fillRect(x-8,132,3,15);ctx.fillRect(x+6,132,3,15);
+    ctx.fillRect(x-4,150,3,12);ctx.fillRect(x+2,150,3,12);
+  }
+  ctx.globalAlpha=1;
+  if(A.prop==='jangseung'){
+    [[112,136],[154,126],[202,139]].forEach(([x,y],i)=>{
+      ctx.fillStyle='rgba(4,3,7,0.72)';ctx.fillRect(x-5,y-3,12,7);
+      if(o.blink&&i!==1){
+        ctx.fillStyle='rgba(214,207,186,0.58)';ctx.fillRect(x-3,y-1,2,2);ctx.fillRect(x+3,y-1,2,2);
+      }
+    });
+  }else if(A.prop==='hanok'){
+    if(o.walk>0){                                                      // 창호지 안쪽을 반대로 지나는 긴 그림자
+      const x=Math.round(294+23*(1-(o.phase-10)/4));
+      ctx.globalAlpha=0.72*o.walk;ctx.fillStyle='#060408';
+      ctx.fillRect(x,163,7,8);ctx.fillRect(x-2,171,11,15);
+    }
+  }else if(A.prop==='mounds'){
+    ctx.fillStyle='rgba(5,8,6,'+(0.35+o.rise*0.45)+')';                // 봉분 뒤에서 잠깐 솟는 손가락
+    [[116,172,16],[121,174,12],[126,173,14],[213,176,10]].forEach(([x,y,h],i)=>{
+      const up=Math.round(o.rise*(h+i%2*3));ctx.fillRect(x,y-up,3,up+2);
+    });
+  }else{
+    ctx.fillStyle='rgba(5,3,7,0.66)';                                  // 귀문에 걸린 머리카락 같은 검은 발
+    [232,244,268,280,300].forEach((x,i)=>{
+      const sway=Math.round(o.veil*(i%2?1:-1));ctx.fillRect(x+sway,117,3+(i%2),24+i%3*8);
+      ctx.fillRect(x+1+sway,139+i%3*8,2,9);
+    });
+  }
+  ctx.restore();
+}
+function drawRitualMarks(t,showEnemy){
+  ctx.save();
+  const ring=(x,y,rx,ry,n,col,phase)=>{
+    ctx.fillStyle=col;
+    for(let i=0;i<n;i++){
+      const a=TAU*(i/n)+phase, px=Math.round(x+Math.cos(a)*rx), py=Math.round(y+Math.sin(a)*ry);
+      ctx.fillRect(px-2,py-1,4,2);
+    }
+  };
+  ring(SHAMAN_POS[0],SHAMAN_POS[1]+3,40,12,14,'rgba(201,155,63,0.15)',t*0.035);
+  ctx.fillStyle='rgba(201,155,63,0.12)';
+  ctx.fillRect(SHAMAN_POS[0]-2,SHAMAN_POS[1]-5,4,18);ctx.fillRect(SHAMAN_POS[0]-10,SHAMAN_POS[1]+2,20,3);
+  if(showEnemy){
+    ring(ENEMY_POS[0],ENEMY_POS[1]+4,43,13,12,'rgba(154,111,208,0.11)',-t*0.025);
+    ctx.fillStyle='rgba(90,66,112,0.13)';
+    ctx.fillRect(ENEMY_POS[0]-16,ENEMY_POS[1]+7,32,2);ctx.fillRect(ENEMY_POS[0]-2,ENEMY_POS[1]-1,4,14);
+  }
+  ctx.restore();
+}
+function drawPossessionMarks(t,col){
+  ctx.save();
+  for(let i=0;i<6;i++){
+    const a=TAU*i/6+t*0.12, x=Math.round(SHAMAN_POS[0]+Math.cos(a)*29), y=Math.round(SHAMAN_POS[1]-30+Math.sin(a)*20);
+    ctx.globalAlpha=0.18+(i%2)*0.05;ctx.fillStyle='#d8d0bd';ctx.fillRect(x-2,y-5,5,9);
+    ctx.fillStyle=col;ctx.fillRect(x-1,y-3,3,2);ctx.fillRect(x,y+1,2,3);
+  }
+  ctx.restore();
+}
+function drawMotionTell(motion,x,t){
+  ctx.save();
+  if(motion==='beast'){
+    ctx.fillStyle='rgba(145,134,126,0.16)';
+    for(let i=0;i<4;i++)ctx.fillRect(Math.round(x-28+i*9+Math.sin(t*2+i)*2),ENEMY_POS[1]+8+i%2*3,12,2);
+  }else if(motion==='giant'){
+    ctx.fillStyle='rgba(4,3,7,0.2)';
+    for(let i=0;i<5;i++)ctx.fillRect(Math.round(x-30+i*14),ENEMY_POS[1]+7,8,3+i%2*2);
+  }else{
+    ctx.fillStyle='rgba(154,111,208,0.10)';
+    for(let i=0;i<4;i++)ctx.fillRect(Math.round(x-30+Math.sin(t*0.7+i*2)*13),ENEMY_POS[1]-42+i*13,2,8);
+  }
+  ctx.restore();
+}
+function drawProp(A,t){
   if(A.prop==='jangseung'){
     [[30,74,1],[56,60,-1]].forEach(([px,ph,dir])=>{
       ctx.fillStyle='#12101c';
@@ -5305,15 +5518,13 @@ function drawProp(A){
     ctx.fillStyle='#0e0a10';
     ctx.beginPath();ctx.moveTo(210,148);ctx.quadraticCurveTo(280,128,352,146);
     ctx.lineTo(360,158);ctx.lineTo(360,196);ctx.lineTo(214,196);ctx.closePath();ctx.fill();
-    const fl=0.5+0.5*Math.sin(animT*7+Math.sin(animT*13));            // 창호지 너머 흔들리는 불빛
+    const fl=0.5+0.5*Math.sin(t*7+Math.sin(t*13));                    // 창호지 너머 흔들리는 불빛
     ctx.fillStyle='rgba(201,155,63,'+(0.10+fl*0.10)+')';
     ctx.fillRect(292,160,30,26);
     ctx.strokeStyle='rgba(10,7,12,0.9)';ctx.lineWidth=2;
     ctx.strokeRect(292,160,30,26);
     ctx.beginPath();ctx.moveTo(307,160);ctx.lineTo(307,186);ctx.stroke();
     ctx.beginPath();ctx.moveTo(292,173);ctx.lineTo(322,173);ctx.stroke();
-    ctx.fillStyle='rgba(6,4,8,0.95)';                                  // 그림자 하나가 지나간 자리
-    if((animT%9)<0.5)ctx.fillRect(296,163,9,20);
   }else if(A.prop==='mounds'){
     [[62,164,26],[132,170,20],[36,176,14]].forEach(([mx,my,mr])=>{     // 봉분들
       ctx.fillStyle='#0e140f';
@@ -5321,11 +5532,11 @@ function drawProp(A){
     });
     ctx.fillStyle='#141a15';                                           // 비석
     ctx.fillRect(96,152,7,18); ctx.fillRect(94,150,11,4);
-    const wf=Math.sin(animT*1.8);                                      // 도깨비불
+    const wf=Math.sin(t*1.8);                                          // 도깨비불
     ctx.save();ctx.shadowColor='#7ae0c0';ctx.shadowBlur=10;
     ctx.fillStyle='rgba(122,224,192,0.7)';
-    ctx.beginPath();ctx.arc(150+wf*8,138+Math.sin(animT*1.2)*4,3,0,TAU);ctx.fill();
-    ctx.beginPath();ctx.arc(70-wf*6,132+Math.sin(animT*1.5+2)*4,2.4,0,TAU);ctx.fill();
+    ctx.beginPath();ctx.arc(150+wf*8,138+Math.sin(t*1.2)*4,3,0,TAU);ctx.fill();
+    ctx.beginPath();ctx.arc(70-wf*6,132+Math.sin(t*1.5+2)*4,2.4,0,TAU);ctx.fill();
     ctx.restore();
   }else{
     ctx.fillStyle='#1c0a10';                                           // 홍살문
@@ -5338,13 +5549,14 @@ function drawProp(A){
 }
 function drawStage(){
   const A=ACTS[act];
+  const mt=REDUCED?0:animT;                                            // 비필수 유휴·배경 모션 공용 시계
   ctx.setTransform(scaleK,0,0,scaleK,0,0);
   ctx.clearRect(0,0,VW,VH);
   const sky=ctx.createLinearGradient(0,0,0,STAGE_H);
   sky.addColorStop(0,A.sky[0]); sky.addColorStop(0.66,A.sky[1]); sky.addColorStop(1,A.sky[2]);
   ctx.fillStyle=sky; ctx.fillRect(0,0,VW,STAGE_H);
   for(const s of STARS){
-    ctx.globalAlpha=0.2+0.4*Math.abs(Math.sin(animT*0.7+s.p));
+    ctx.globalAlpha=0.2+0.4*Math.abs(Math.sin(mt*0.7+s.p));
     ctx.fillStyle='#c9cee0';
     ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,TAU);ctx.fill();
   }
@@ -5361,12 +5573,13 @@ function drawStage(){
   ctx.save(); ctx.translate(0,42);                                     // 지평선 그룹 하강 (무대 확장분)
   ctx.fillStyle='rgba(10,9,20,0.9)';                                   // 능선
   ctx.beginPath();ctx.moveTo(0,150);ctx.quadraticCurveTo(70,106,150,148);ctx.quadraticCurveTo(230,108,VW,150);ctx.lineTo(VW,176);ctx.lineTo(0,176);ctx.closePath();ctx.fill();
-  drawProp(A);
+  drawProp(A,mt);
+  drawOmenLayer(A,mt);
   const gr=ctx.createLinearGradient(0,172,0,STAGE_H);                  // 마당
   gr.addColorStop(0,A.ground[0]); gr.addColorStop(1,A.ground[1]);
   ctx.fillStyle=gr; ctx.fillRect(0,172,VW,STAGE_H-172);
   for(let i=0;i<3;i++){                                                // 안개
-    const y=150+i*44+Math.sin(animT*0.24+i*2)*10;
+    const y=150+i*44+Math.sin(mt*0.24+i*2)*10;
     const mg=ctx.createLinearGradient(0,y-20,0,y+20);
     mg.addColorStop(0,'rgba(140,140,170,0)');
     mg.addColorStop(0.5,'rgba(140,140,170,'+A.fog+')');
@@ -5378,7 +5591,7 @@ function drawStage(){
   ctx.strokeStyle='#0c0a12'; ctx.lineWidth=5; ctx.lineCap='round';
   ctx.beginPath();ctx.moveTo(VW+4,8);ctx.quadraticCurveTo(322,24,284,18);ctx.stroke();
   SAEKDONG.forEach((c,i)=>{
-    const rx=292+i*12, sway=Math.sin(animT*1.4+i)*4;
+    const rx=292+i*12, sway=Math.sin(mt*1.4+i)*4;
     ctx.fillStyle=c; ctx.globalAlpha=0.5;
     ctx.beginPath();
     ctx.moveTo(rx,20);ctx.lineTo(rx+3.4,20);
@@ -5393,8 +5606,9 @@ function drawStage(){
   ctx.beginPath(); ctx.ellipse(SHAMAN_POS[0],SHAMAN_POS[1]+3,50,13,0,0,TAU); ctx.fill();
   ctx.fillStyle='rgba(20,14,22,0.55)';
   ctx.beginPath(); ctx.ellipse(ENEMY_POS[0],ENEMY_POS[1]+3,50,13,0,0,TAU); ctx.fill();
+  drawRitualMarks(mt,!!(inBattle&&enemy));                              // 전투원 아래에만 남는 희미한 굿문양
   [[16,254],[168,236],[206,222],[196,292]].forEach(([cx2,cy2],i)=>{     // 촛불
-    const fl=Math.sin(animT*9+i*2)*1.4+Math.sin(animT*23+i*5)*0.6;
+    const fl=Math.sin(mt*9+i*2)*1.4+Math.sin(mt*23+i*5)*0.6;
     ctx.fillStyle='#b0a48c';
     ctx.fillRect(cx2-1.5,cy2-7,3,7);
     ctx.save();
@@ -5409,13 +5623,14 @@ function drawStage(){
   if(inBattle&&channeled){                                              // 빙의한 신령의 기운
     const scol=SPIRITS[channeled].col;
     ctx.save();
-    ctx.globalAlpha=0.10+Math.sin(animT*2.4)*0.03+(channelFlash>0?channelFlash*0.25:0);
+    ctx.globalAlpha=0.10+Math.sin(mt*2.4)*0.03+(channelFlash>0?channelFlash*0.25:0);
     ctx.fillStyle=scol;
     ctx.beginPath();ctx.ellipse(SHAMAN_POS[0],SHAMAN_POS[1]+2,34,9,0,0,TAU);ctx.fill();
     ctx.restore();
+    drawPossessionMarks(mt,scol);                                      // 한지 부적 조각으로 빙의 실루엣을 분리한다
     drawPixelSprite('sp_'+channeled,spiritPix(channeled),
-      Math.round(SHAMAN_POS[0]-12),Math.round(SHAMAN_POS[1]-4+Math.sin(animT*1.6)*3),
-      1.7,false,0.18+Math.sin(animT*1.8)*0.04+(channelFlash>0?channelFlash*0.4:0));
+      Math.round(SHAMAN_POS[0]-12),Math.round(SHAMAN_POS[1]-4+Math.sin(mt*1.6)*3),
+      1.7,false,0.18+Math.sin(mt*1.8)*0.04+(channelFlash>0?channelFlash*0.4:0),1,1,false,0,mt);
   }
   if(gutFxT>0&&channeled){                                              // 굿거리: 신령이 크게 현신
     const p=gutFxT/1.1;
@@ -5426,31 +5641,24 @@ function drawStage(){
     let sx=SHAMAN_POS[0], lph=0;
     if(shamanLunge>0){lph=Math.sin((0.42-shamanLunge)/0.42*Math.PI);sx+=lph*40;}
     if(shamanHurtT>0)sx-=shamanHurtT*10;                                // 피격 넉백
-    const sbob=Math.round(Math.sin(animT*2.2)*1.5);
+    const sbob=Math.round(Math.sin(mt*2.2)*1.5);
     shadowE2(sx,SHAMAN_POS[1]+2,17);
     const sh=shamanPix();
     drawPixelSprite(sh.key,sh.fn,Math.round(sx),SHAMAN_POS[1]+sbob,1.1,false,1,
-      1+lph*0.14,1-lph*0.08,shamanHurtT>0.2);
+      1+lph*0.14,1-lph*0.08,shamanHurtT>0.2,0,mt);
   }
   if(inBattle&&enemy){                                                  // 귀신 (픽셀)
     const meta=spriteMeta(enemy.sp);
     let ex=ENEMY_POS[0], ey=ENEMY_POS[1], ea=1, lph=0, sqx=1, sqy=1, ebob=0;
-    const tw=((animT*1.3+enemyFx.seed)%4.2);                            // 경련
-    if(tw<0.09){ex+=(Math.random()-0.5)*7;ea*=0.8;}
-    if(meta.motion==='wraith'){                                         // 원혼: 크게 부유, 몸이 일렁인다
-      ebob=Math.round(Math.sin(animT*1.3+enemyFx.seed)*3.5);
-      ex+=Math.sin(animT*0.8+enemyFx.seed)*2.2;
-      ea*=0.92+Math.sin(animT*2.7+enemyFx.seed)*0.08;
-    }else if(meta.motion==='giant'){                                    // 거대귀: 거의 미동 없이 눌러앉음
-      ebob=Math.round(Math.sin(animT*0.9+enemyFx.seed)*0.8);
-    }else{                                                              // 요괴: 얕고 빠른 숨
-      ebob=Math.round(Math.sin(animT*2.6+enemyFx.seed)*1.2);
-    }
+    const pose=hauntPose(meta.motion,mt,enemyFx.seed,REDUCED);
+    const tw=((mt*1.3+enemyFx.seed)%4.2);                               // 짧고 결정적인 경련
+    if(!REDUCED&&tw<0.09){ex+=tw<0.045?-3:3;ea*=0.8;}
+    ebob=pose.bob;ex+=pose.dx;ea*=pose.alpha;sqx*=pose.sqx;sqy*=pose.sqy;
     if(enemyFx.appearT>0){const p=enemyFx.appearT/0.8;ey-=p*70;ea*=(1-p*0.8);}
     if(enemyFx.lungeT>0){
       const t2=(0.42-enemyFx.lungeT)/0.42;
       if(meta.motion==='beast'){                                        // 웅크렸다 튀어나온다
-        if(t2<0.4){ex+=t2/0.4*8; sqx=1+t2/0.4*0.1; sqy=1-t2/0.4*0.16;}
+        if(t2<0.4){ex+=t2/0.4*8; sqx*=1+t2/0.4*0.1; sqy*=1-t2/0.4*0.16;}
         else{lph=Math.sin((t2-0.4)/0.6*Math.PI); ex-=lph*58;}
       }else if(meta.motion==='giant'){                                  // 화면이 먼저, 몸은 뒤늦게 짧게
         lph=Math.sin(Math.max(0,(t2-0.3)/0.7)*Math.PI); ex-=lph*30;
@@ -5468,13 +5676,20 @@ function drawStage(){
       ea*=0.55+(enemyFx.dieT/0.7)*0.45;
     }
     const sc=meta.scale;
+    if(!enemyFx.dieT)drawMotionTell(meta.motion,ex,mt);                 // 체형별 바닥 흔적: 긁힘·압력·귀기
     shadowE2(ex,ENEMY_POS[1]+3,(enemy.sp==='jangsanbeom'?30:18)*(enemyFx.dieT>0?enemyFx.dieT/0.7:1));
+    if(pose.tear&&!enemyFx.hurtT&&!enemyFx.lungeT&&!enemyFx.dieT&&!enemyFx.appearT){
+      drawPixelSprite('sp_'+enemy.sp+(enemy.phase2?'!2':''),spiritPix(enemy.sp),
+        Math.round(ex-6),ey+ebob+2,sc,true,0.12,sqx*0.98,sqy*1.02,false,0,mt);
+      drawPixelSprite('sp_'+enemy.sp+(enemy.phase2?'!2':''),spiritPix(enemy.sp),
+        Math.round(ex+5),ey+ebob-1,sc,true,0.07,sqx*1.02,sqy*0.98,false,0,mt);
+    }
     drawPixelSprite('sp_'+enemy.sp+(enemy.phase2?'!2':''),spiritPix(enemy.sp),
-      Math.round(ex),ey+ebob,sc,true,ea,sqx+lph*0.13,sqy-lph*0.07,ewhite,dstage);
+      Math.round(ex),ey+ebob,sc,true,ea,sqx+lph*0.13,sqy-lph*0.07,ewhite,dstage,mt);
     if(enemy.mark>0&&!enemyFx.dieT){                                    // 낙인 문양 — 몸에 새겨진 烙이 상시 맥동
       const mx=Math.round(ex)+(sc>=1.4?50:38), my=ENEMY_POS[1]-meta.hitY-24;
       ctx.save();
-      ctx.globalAlpha=0.55+Math.sin(animT*3.2)*0.2;
+      ctx.globalAlpha=0.55+Math.sin(mt*3.2)*0.2;
       ctx.fillStyle='#d84a3a';
       ctx.fillRect(mx-7,my-7,14,2);ctx.fillRect(mx-7,my+5,14,2);
       ctx.fillRect(mx-7,my-7,2,14);ctx.fillRect(mx+5,my-7,2,14);
