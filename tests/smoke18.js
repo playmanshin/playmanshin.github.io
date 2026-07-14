@@ -39,14 +39,24 @@ const test=`
     diffMode='story'; evHeal0(10);
     assert.equal(teamHP,60,'이야기 거절은 기존 회복');
     console.log('[무보상거절] OK');
-    // 3) 적 능력치는 난이도 프로필과 무관 (이 단계에서 적 HP 일괄 증가 금지)
+    // 3) v0.7.3 전투 템포: 본굿 일반 적 +8%·1~3막 보스 +10% (구미호 제외), 공격력은 프로필 무관
     localStorage.setItem('ms_geumje','0');
     diffMode='story';  startBattle('mulgwisin'); const hpStory=enemy.max, atkStory=enemy.pat.filter(m=>m.a!==undefined).map(m=>m.a).join();
     inBattle=false; stopDrone();
     diffMode='bongut'; startBattle('mulgwisin'); const hpBongut=enemy.max, atkBongut=enemy.pat.filter(m=>m.a!==undefined).map(m=>m.a).join();
     inBattle=false; stopDrone();
-    assert.equal(hpStory,hpBongut,'적 HP 불변'); assert.equal(atkStory,atkBongut,'적 공격 불변');
-    console.log('[적불변] HP='+hpBongut+' OK');
+    assert.equal(hpBongut,Math.round(hpStory*1.08),'본굿 일반 적 +8%');
+    assert.equal(atkStory,atkBongut,'적 공격은 프로필 무관');
+    act=1;
+    diffMode='story';  startBattle('geusundae',{boss:true}); const bS=enemy.max; inBattle=false; stopDrone();
+    diffMode='bongut'; startBattle('geusundae',{boss:true}); const bB=enemy.max; inBattle=false; stopDrone();
+    assert.ok(Math.abs(bB-Math.round(bS*1.10))<=1,'본굿 1~3막 보스 +10%');
+    act=3;
+    diffMode='story';  startBattle('gumiho',{boss:true}); const gS=enemy.max; inBattle=false; stopDrone();
+    diffMode='bongut'; startBattle('gumiho',{boss:true}); const gB=enemy.max; inBattle=false; stopDrone();
+    assert.equal(gS,gB,'구미호(4막 보스)는 유지');
+    act=0;
+    console.log('[전투템포] 일반 +8% / 초반 보스 +10% / 구미호 유지 OK');
     // 4) 금제는 본굿 위에서만 (이야기에서는 0으로 게이트)
     localStorage.setItem('ms_geumje','3');
     diffMode='story';  assert.equal(geumje(),0);

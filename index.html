@@ -1090,8 +1090,8 @@ let uidSeq=1;
 // 금제는 본굿 위에 얹히는 modifier (이야기에서는 비활성). 적 능력치는 여기서 건드리지 않는다.
 let diffMode=localStorage.getItem('ms_diff')||'bongut';
 const DIFF={
-  story: {label:'이야기',restHeal:0.45,actHeal:0.40,sendHeal:0.30,sendMax:3,blessBlock:8,blessStr:1,shopHeal:0.45,shopHealCost:30,gearDraft:0.5,evHeal:1},
-  bongut:{label:'본굿', restHeal:0.30,actHeal:0.15,sendHeal:0.20,sendMax:2,blessBlock:6,blessStr:0,shopHeal:0.30,shopHealCost:35,gearDraft:0.3,evHeal:0.5}
+  story: {label:'이야기',restHeal:0.45,actHeal:0.40,sendHeal:0.30,sendMax:3,blessBlock:8,blessStr:1,shopHeal:0.45,shopHealCost:30,gearDraft:0.5,evHeal:1,hpNormal:1,hpBossEarly:1},
+  bongut:{label:'본굿', restHeal:0.30,actHeal:0.15,sendHeal:0.20,sendMax:2,blessBlock:6,blessStr:0,shopHeal:0.30,shopHealCost:35,gearDraft:0.3,evHeal:0.5,hpNormal:1.08,hpBossEarly:1.10}
 };
 function dprof(){return DIFF[diffMode]||DIFF.bongut;}
 // 전투 외 회복 헬퍼 — 난이도 프로필이 전투 카드 밸런스를 건드리지 않도록 경로를 분리한다
@@ -3317,7 +3317,9 @@ function startBattle(sp,opts){
   const vr=opts.variant?VARIANTS[opts.variant]:null;
   const gj=geumje();
   const AS=ACT_SCALE[act], rowIn=clamp(depth-act*ROWS_PER_ACT,0,ROWS_PER_ACT-1);
-  const hp=Math.round((w.hp+rowIn*2.4)*AS.hp*(opts.elite?1.5:1)*(vr&&vr.hpMul?vr.hpMul:1)*(gj>=2?1.15:1)*(opts.rev?1.2:1));
+  // v0.7.3 게이트: 본굿 전투 템포 — 일반 적 +8%, 1~3막 보스 +10% (구미호·정예·역빙의 제외, 이야기는 기존 수치)
+  const tempo=opts.boss?(act<=2?dprof().hpBossEarly:1):((opts.elite||opts.rev)?1:dprof().hpNormal);
+  const hp=Math.round((w.hp+rowIn*2.4)*AS.hp*(opts.elite?1.5:1)*(vr&&vr.hpMul?vr.hpMul:1)*(gj>=2?1.15:1)*(opts.rev?1.2:1)*tempo);
   const atkAdd=AS.atk+Math.floor(rowIn/3)+(opts.elite?2:0)+(vr&&vr.atk?vr.atk:0);
   // 다단히트에는 보너스를 타수로 분배 (타수만큼 곱적용되는 스케일 폭주 방지)
   const scalePat=p=>p.map(m=>{

@@ -94,7 +94,7 @@ const test=`
     console.log('[백족] 초기 h='+h0);
     assert.equal(h0,2);
     console.log('[스케일] 지네각시 HP='+enemy.max);
-    assert.ok(Math.abs(enemy.max-136)<=10,'스케일 테이블 이탈: '+enemy.max);
+    assert.ok(Math.abs(enemy.max-150)<=10,'스케일 테이블 이탈(본굿 3막 보스 ×1.10): '+enemy.max);   // v0.7.3: 기본 136 × 1.10
     inBattle=false; stopDrone();
     // 묘귀 아홉 목숨
     party.push({sp:'myogwi',lv:1,wh:2});
