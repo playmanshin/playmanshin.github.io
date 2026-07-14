@@ -496,11 +496,26 @@ const pick=a=>a[Math.floor(Math.random()*a.length)];
 function josa(w,a,b){const c=w.charCodeAt(w.length-1);return ((c-0xAC00)%28>0)?a:b;}
 
 // ---------- 사운드 ----------
-let AC=null, droneNodes=null;
+let AC=null, droneNodes=null, musicBus=null, bgmTimer=0;
 let muted=localStorage.getItem('ms_mute')==='1';
 let nextBless=false;   // 천도의 명복: 다음 전투 축복
 function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC;}
-function tone(f0,f1,dur,type,vol,delay){
+// 음악 전용 버스 — 타격·굿거리 순간 덕킹으로 효과음에 자리를 내준다
+function musicG(){
+  const a=ac(); if(!a)return null;
+  if(!musicBus){try{const g=a.createGain();g.gain.value=1;g.connect(a.destination);musicBus=g;}catch(e){}}
+  return musicBus;
+}
+function duckMusic(db,dur){
+  if(muted||!musicBus||!AC)return;
+  try{
+    const g=musicBus.gain, t0=AC.currentTime, k=Math.pow(10,-(db||4)/20);
+    g.cancelScheduledValues(t0); g.setValueAtTime(g.value,t0);
+    g.linearRampToValueAtTime(k,t0+0.03);
+    g.linearRampToValueAtTime(1,t0+(dur||0.3));
+  }catch(e){}
+}
+function tone(f0,f1,dur,type,vol,delay,toMusic){
   if(muted)return;
   const a=ac(); if(!a)return;
   try{
@@ -510,33 +525,101 @@ function tone(f0,f1,dur,type,vol,delay){
     o.frequency.exponentialRampToValueAtTime(Math.max(1,f1),t0+dur);
     g.gain.setValueAtTime(vol||0.08,t0);
     g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
-    o.connect(g); g.connect(a.destination);
+    o.connect(g); g.connect(toMusic?(musicG()||a.destination):a.destination);
     o.start(t0); o.stop(t0+dur+0.02);
   }catch(e){}
 }
+// 전투 배경음 — 저역 드론 + 바람(여과 노이즈) + 성근 계면조 종소리. 전부 절차 합성 (외부 파일 0)
 function startDrone(){
   if(muted)return;
   const a=ac(); if(!a||droneNodes)return;
   try{
-    const g=a.createGain(); g.gain.value=0.016; g.connect(a.destination);
+    const bus=musicG()||a.destination;
+    const g=a.createGain(); g.gain.value=0.016; g.connect(bus);
     const o1=a.createOscillator(); o1.type='sine'; o1.frequency.value=54;
     const o2=a.createOscillator(); o2.type='sine'; o2.frequency.value=55.7;
     o1.connect(g); o2.connect(g); o1.start(); o2.start();
-    droneNodes={g,o1,o2};
+    const nb=a.createBuffer(1,a.sampleRate*2,a.sampleRate);       // 밤바람
+    const nd=nb.getChannelData(0); for(let i=0;i<nd.length;i++)nd[i]=Math.random()*2-1;
+    const ns=a.createBufferSource(); ns.buffer=nb; ns.loop=true;
+    const bp=a.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=260; bp.Q.value=1.6;
+    const ng=a.createGain(); ng.gain.value=0.011;
+    const lfo=a.createOscillator(); lfo.frequency.value=0.11;     // 바람이 느리게 쏠린다
+    const lg=a.createGain(); lg.gain.value=140; lfo.connect(lg); lg.connect(bp.frequency);
+    ns.connect(bp); bp.connect(ng); ng.connect(bus);
+    ns.start(); lfo.start();
+    droneNodes={g,o1,o2,ns,ng,lfo};
+    clearInterval(bgmTimer);
+    bgmTimer=setInterval(bgmTick,900);
   }catch(e){}
 }
+function bgmTick(){ // 성근 종소리 — 대개는 침묵이 긴장을 만든다
+  if(muted||!droneNodes)return;
+  if(Math.random()<0.62)return;
+  const SC=[110,130.8,146.8,164.8,196];                           // A 계면조풍 5음
+  const f=SC[Math.floor(Math.random()*SC.length)]*(Math.random()<0.25?2:1);
+  tone(f,f*0.995,2.2,'sine',0.028,0,true);
+  if(Math.random()<0.3)tone(f/2,f/2*0.997,2.6,'sine',0.015,0.05,true);
+  if(Math.random()<0.12)[1568,1760].forEach((h,i)=>tone(h,h-30,0.5,'sine',0.011,i*0.13,true));  // 방울 잔울림
+}
 function stopDrone(){
+  clearInterval(bgmTimer); bgmTimer=0;
   if(!droneNodes)return;
-  try{droneNodes.g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+0.8);
-    droneNodes.o1.stop(AC.currentTime+1);droneNodes.o2.stop(AC.currentTime+1);}catch(e){}
+  try{
+    droneNodes.g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+0.8);
+    droneNodes.ng.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+0.8);
+    droneNodes.o1.stop(AC.currentTime+1);droneNodes.o2.stop(AC.currentTime+1);
+    droneNodes.ns.stop(AC.currentTime+1);droneNodes.lfo.stop(AC.currentTime+1);
+  }catch(e){}
   droneNodes=null;
 }
 const snd={
   tap:()=>tone(700,640,0.05,'square',0.03),
   jingle:()=>{tone(2100,2000,0.09,'sine',0.045);tone(2450,2350,0.1,'sine',0.04,0.05);tone(2750,2650,0.12,'sine',0.035,0.1);},
   hit:()=>tone(160,55,0.14,'square',0.09),
-  block:()=>tone(290,240,0.1,'triangle',0.06),
-  heal:()=>{tone(620,820,0.15,'sine',0.045);tone(820,1020,0.17,'sine',0.035,0.09);},
+  // 시전음 — 카드 fx 계통별 첫 레이어 (없는 계통은 기존 방울 소리)
+  cast:fam=>{
+    switch(fam){
+      case 'slash':    tone(900,260,0.08,'square',0.035); break;
+      case 'talisman': tone(1100,1700,0.07,'square',0.03); tone(1500,1900,0.05,'square',0.02,0.05); break;
+      case 'hanMist':  tone(140,85,0.35,'sawtooth',0.03); break;
+      case 'seal':     tone(300,220,0.09,'triangle',0.05); break;
+      case 'ward':     tone(520,760,0.12,'triangle',0.04); tone(1040,1000,0.15,'sine',0.02,0.07); break;
+      case 'heal':     tone(500,760,0.16,'sine',0.035); break;
+      default: snd.jingle();
+    }
+  },
+  // 적중음+잔향 — pos: first(강)/mid(짧고 약)/last(재강조). 잔향은 mid에서 생략
+  strike:(fam,pos)=>{
+    const k=pos==='mid'?0.55:pos==='last'?1.2:1, tail=pos!=='mid';
+    switch(fam){
+      case 'slash':
+        tone(160,55,pos==='mid'?0.09:0.14,'square',0.09*k);
+        tone(1900,700,0.06,'square',0.03*k);
+        if(tail)tone(2400,2100,0.18,'sine',0.014,0.09);
+        break;
+      case 'talisman':
+        tone(320,90,0.12,'square',0.08*k);
+        tone(1500,2200,0.05,'square',0.025*k);
+        if(tail){tone(700,300,0.2,'sawtooth',0.02,0.1);tone(2000,1500,0.15,'sine',0.012,0.16);}
+        break;
+      case 'hanMist':
+        tone(480,150,0.3,'sine',0.055*k);
+        tone(150,60,0.4,'sawtooth',0.03*k,0.02);
+        if(tail)tone(75,52,0.6,'sine',0.02,0.18);
+        break;
+      case 'seal':
+        tone(95,40,0.16,'sine',0.11*k);
+        tone(240,140,0.08,'square',0.05*k,0.01);
+        if(tail)tone(130,105,0.3,'triangle',0.02,0.12);
+        break;
+      default:                                       // impact 등 일반 타격
+        tone(160,55,pos==='mid'?0.1:0.14,'square',0.09*k);
+        if(tail)tone(90,60,0.25,'sine',0.02,0.08);
+    }
+  },
+  block:()=>{tone(290,240,0.1,'triangle',0.06);tone(1568,1500,0.28,'sine',0.011,0.1);},
+  heal:()=>{tone(620,820,0.15,'sine',0.045);tone(820,1020,0.17,'sine',0.035,0.09);tone(1640,1600,0.22,'sine',0.012,0.2);},
   buff:()=>tone(400,600,0.15,'triangle',0.055),
   han:()=>tone(480,150,0.3,'sine',0.055),
   curse:()=>{tone(200,90,0.4,'sawtooth',0.055);tone(211,95,0.4,'sawtooth',0.04,0.02);},
@@ -2585,7 +2668,7 @@ async function castGut(){
   const g=channeled?GUTS[channeled]:null;
   if(!g)return;
   gutCastTurn=true;
-  busy=true; sinmyeong=0; snd.gutcast(); shamanLunge=0.42; shakeT=0.3;
+  busy=true; sinmyeong=0; snd.gutcast(); duckMusic(5,0.5); shamanLunge=0.42; shakeT=0.3;
   screenFlash('invert',0.12);
   showGutBanner(g.name,SPIRITS[channeled].col);
   spawnRibbons(); gutFxT=1.1;
@@ -2709,7 +2792,9 @@ function dmgPlayer(n,pierce,midHit){ // 미방어 피해량 반환. pierce=방�
   }
   if(pierce&&n>0)float2(SHAMAN_POS[0],SHAMAN_POS[1]-88,'관통!','#d84a3a');
   if(left>0){
-    teamHP-=left; shakeT=0.25; snd.hit();
+    teamHP-=left; shakeT=0.25;
+    snd.strike('impact',midHit?'mid':'first');
+    duckMusic(left>=10?5:3,0.35);
     shamanHurtT=0.3;
     spawnFx('impact',SHAMAN_POS[0]+Math.round((Math.random()-0.5)*12),SHAMAN_POS[1]-38);
     hitStop(left>=10&&!midHit?0.1:0.06);
@@ -2742,7 +2827,7 @@ function gainHan(n){
   enemy.han=Math.min(hanCap(),enemy.han+n);
   return enemy.han-before;
 }
-function dmgEnemy(n,color,pierce,trueDmg,fxType,midHit){  // midHit: 다단히트 중간 타 — 화면 플래시는 마지막 타에만
+function dmgEnemy(n,color,pierce,trueDmg,fxType,midHit,hitPos){  // midHit: 다단 중간 타(화면 플래시 억제), hitPos: 연타 강약(first/mid/last)
   if(!enemy||enemy.hp<=0)return;
   let left=trueDmg?n:Math.max(0,n-(enemy.armor||0));   // 철갑: 공격은 깎이지만 恨·신력은 관통
   if(enemy.block>0&&!pierce){
@@ -2761,7 +2846,8 @@ function dmgEnemy(n,color,pierce,trueDmg,fxType,midHit){  // midHit: 다단히�
     if(left>=15&&!midHit)screenFlash('white',0.09);
     burst(ENEMY_POS[0],ENEMY_POS[1]-34,color||'#c99b3f',7);
     float2(ENEMY_POS[0],ENEMY_POS[1]-70,'-'+left,'#e88a7a',true);
-    snd.hit();
+    snd.strike(ft,hitPos||'first');
+    duckMusic(left>=15?5:3,0.3);
     if(enemy.phase!==undefined&&!enemy.phase2&&SPIRITS[enemy.sp].final&&enemy.hp<=enemy.max/2&&enemy.hp>0){
       enemy.phase2=true; enemy.str+=3;
       screenFlash('invert',0.14);
@@ -2779,7 +2865,8 @@ async function playCard(inst,el){
   if(d.xcost&&energy<1){toast('바칠 신력이 없다');snd.tap();return;}
   if(c>energy){toast('신력(神力)이 부족하다!');snd.tap();return;}
   const xVal=d.xcost?energy:0;
-  busy=true; energy-=c; firstCardPlayed=true; cardsPlayed++; snd.jingle();
+  busy=true; energy-=c; firstCardPlayed=true; cardsPlayed++;
+  snd.cast(d.fx||(v.dmg||v.xDmg||v.comboDmg||v.dmgPerSpirit?'slash':v.block||v.xBlock?'ward':v.heal||v.cleanse?'heal':v.dot?'hanMist':v.mark?'seal':null));
   sinmyeong=Math.min(5,sinmyeong+1);
   if(el)el.classList.add('played');
   hand=hand.filter(x=>x!==inst);
@@ -2823,7 +2910,8 @@ async function playCard(inst,el){
       if(hasBoon('wonnyeom')&&enemy.han>=10)base+=4;
       let total=Math.round(base*(player.weak>0?0.75:1))+(enemy.field==='bloodmoon'?2:0);
       if(v.curseSyn&&hand.some(x=>CARDS[x.id].curse)){total*=2;if(h===0)float2(ENEMY_POS[0],ENEMY_POS[1]-92,'앙갚음!','#9a6fd0');}
-      dmgEnemy(total,SPIRITS[inst.owner]?SPIRITS[inst.owner].col:'#c99b3f',pierce,false,d.fx||'slash',h<hits-1);
+      dmgEnemy(total,SPIRITS[inst.owner]?SPIRITS[inst.owner].col:'#c99b3f',pierce,false,d.fx||'slash',h<hits-1,
+        hits>1?(h===0?'first':h===hits-1?'last':'mid'):undefined);
       if(enemy.thorns>0&&teamHP>0){snd.thorn();dmgPlayer(enemy.thorns);if(teamHP<=0)return;}  // 반사: 타격당
       if(hits>1)await sleep(160);
     }
@@ -3136,7 +3224,7 @@ function gainRandomRelic(){
 }
 async function winBattle(){
   kills++;
-  enemyFx.dieT=0.7; snd.die();
+  enemyFx.dieT=0.7; snd.die(); duckMusic(4,0.5);
   screenFlash('white',0.1); hitStop(0.12);
   wisp(ENEMY_POS[0],ENEMY_POS[1]-46,'#8a8a96',8,40);   // 재가 흩날린다
   wisp(ENEMY_POS[0],ENEMY_POS[1]-30,'#9a6fd0',4,30);

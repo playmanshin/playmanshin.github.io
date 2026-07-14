@@ -112,6 +112,14 @@ const test=`
     assert.equal(typeof dissolveOf,'function');
     assert.equal(BAYER4.length,4); assert.ok(BAYER4.every(r=>r.length===4));
     console.log('[디졸브/와스프] OK');
+    // 10) 사운드 레이어: AC 없는 환경에서도 전 계통×강약 무예외 + 덕킹/BGM API
+    muted=false;
+    for(const fam of ['slash','talisman','hanMist','seal','ward','heal','impact',null])snd.cast(fam);
+    for(const fam of ['slash','talisman','hanMist','seal','impact'])
+      for(const pos of ['first','mid','last'])snd.strike(fam,pos);
+    duckMusic(5,0.4); startDrone(); bgmTick(); stopDrone();
+    assert.equal(typeof musicG,'function');
+    console.log('[사운드레이어] 시전·적중·잔향/덕킹 무예외');
     inBattle=false; stopDrone();
     console.log('SMOKE_OK');
     process.exit(0);
