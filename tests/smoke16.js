@@ -155,12 +155,22 @@ const test=`
     player.block=0; dmgPlayer(3,false,false,'first'); dmgPlayer(3,false,true,'mid'); dmgPlayer(3,false,false,'last'); dmgPlayer(3);
     snd.strike=origStrike;
     assert.deepEqual(posLog,['first','mid','last','first'],'연타 순서 first→mid→last');
-    // 투사체 적중 연출 지연: talisman은 도착 시점(fly×PIX_FPS)까지 히트스톱이 걸리지 않는다
-    enemy.hp=500; freezeT=0; flashT=0;
+    // 투사체 적중 연출: setTimeout이 아니라 FX age(게임 시간축) 기반 onContact — 결정적으로 검증
+    enemy.hp=500; freezeT=0; flashT=0; fxAnims.length=0;
     dmgEnemy(22,'#c99b3f',false,false,'talisman');
+    const pf=fxAnims[fxAnims.length-1];
+    assert.equal(typeof pf.onContact,'function','투사체는 접촉 콜백을 가진다');
     assert.equal(freezeT,0,'발사 직후에는 적중 연출 없음');
-    await sleep(FX_DEFS.talisman.fly*(1/12)*1000+80);
-    assert.ok(freezeT>0||flashT>0,'도착 시점에 적중 연출 실행');
+    pf.age=FX_DEFS.talisman.fly*(1/12);                 // FX 시간을 도착 시점까지 직접 전진
+    const cb=pf.onContact; pf.onContact=null; cb();
+    assert.ok(freezeT>0,'도착 시점에 적중 연출 실행');
+    // 잔류 콜백 가드: 전투가 끝났으면 뒤늦은 접촉 연출은 무시된다
+    freezeT=0; fxAnims.length=0;
+    dmgEnemy(22,'#c99b3f',false,false,'talisman');
+    const pf2=fxAnims[fxAnims.length-1];
+    inBattle=false; pf2.onContact();
+    assert.equal(freezeT,0,'전투 종료 후 잔류 콜백 무시');
+    inBattle=true;
     console.log('[사운드계측] 버스/강약/덕킹/연타순서/투사체지연 OK');
     inBattle=false; stopDrone();
     console.log('SMOKE_OK');
