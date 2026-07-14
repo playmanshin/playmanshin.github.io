@@ -94,6 +94,24 @@ const test=`
     addCard('geumjul'); deck[deck.length-1].up=true;
     rsFinal();
     assert.ok(runStats.final.deckList.includes('geumjul+'),'deckList에 강화 표기');
+    // ---- 6) 주사 덧칠·치성 확장 (v0.9 강화 접점) ----
+    deck=[]; addCard('geumjul'); deck[0].up=true;         // 이미 강화 — 후보 아님
+    addCard('sinkal'); addCard('bujeok');                 // 무소속 미강화 2장 — 후보
+    addCard('janggun1','janggun');                        // 신령 소속 — 후보 아님
+    deck.push({uid:uidSeq++,id:'dongti',owner:null});     // 저주 — 후보 아님
+    assert.equal(gearTemperCands().length,2,'덧칠 후보 = 무소속·미강화·비저주만');
+    openGearTemper('shop',1);
+    assert.equal(burnKind,'temper','덧칠 모드 진입');
+    const cand=gearTemperCands()[0];
+    cand.up=true;                                          // 클릭 대체 — 강화 적용 경로는 isUp이 검증(smoke22)
+    assert.equal(gearTemperCands().length,1,'강화 후 후보에서 빠진다');
+    coins=100; openShop();                                 // 덧칠 재고 포함 렌더 무예외
+    assert.equal(shopStock.temper,true,'장터 덧칠 재고');
+    openPick('chiseong');                                  // 무구 일습 옵션 포함 렌더 무예외 (후보 1장이라 옵션 미표시 분기)
+    addCard('pat');
+    assert.equal(gearTemperCands().length,2);
+    openPick('chiseong');                                  // 후보 2장 — 옵션 표시 분기 무예외
+    console.log('[덧칠] 후보 필터·모드 진입·장터/치성 접점 무예외 OK');
     console.log('SMOKE_OK');
     process.exit(0);
   }catch(err){console.error('SMOKE_FAIL',err);process.exit(1);}

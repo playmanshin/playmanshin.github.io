@@ -456,7 +456,7 @@
   <div class="overlay dark hidden" id="burnOv">
     <div style="height:24px"></div>
     <div class="sheet" style="max-width:334px">
-      <h2 style="text-align:center;font-size:16px">🔥 부적 태우기 — 한 장을 고른다</h2>
+      <h2 style="text-align:center;font-size:16px" id="burnTitle">🔥 부적 태우기 — 한 장을 고른다</h2>
       <div class="deckgrid" id="burnList"></div>
       <button id="btnBurnCancel" style="width:100%;margin-top:11px">그만두기</button>
     </div>
@@ -3818,6 +3818,18 @@ function openPick(mode,ret){
     });
     list.appendChild(b);
   });
+  // 치성 확장 (v0.9): 범용 무구 덱도 치성의 고객 — 무소속 부적 2장을 골라 강화
+  if(pickMode==='chiseong'&&gearTemperCands().length>=2){
+    const b=document.createElement('button'); b.className='optcard';
+    b.innerHTML='<div class="pv" style="color:#e0b44a">🖌</div><div class="tx"><b>무구 일습에 치성</b>'+
+      '<span>무소속 부적 2장을 골라 강화한다 (강화 가능 '+gearTemperCands().length+'장)</span></div>';
+    b.addEventListener('click',()=>{
+      if(runStats)runStats.chiseong++;
+      rsReward('chiseong','gear');
+      hide('pickOv'); openGearTemper('chiseong',2);
+    });
+    list.appendChild(b);
+  }
   show('pickOv');
 }
 $('btnPickCancel').addEventListener('click',()=>{
@@ -3839,7 +3851,7 @@ function openShop(){
     gears:[g1,g2].filter(Boolean),
     relic:rpool.length?rpool[Math.floor(Math.random()*rpool.length)]:null,
     token:tpool.length?tpool[Math.floor(Math.random()*tpool.length)]:null,
-    heal:true, rice:true, burn:true
+    heal:true, rice:true, burn:true, temper:true
   };
   renderShop();
 }
@@ -3889,6 +3901,10 @@ function renderShop(){
   if(shopStock.burn&&deck.length>6)offer('🔥','부적 소각','할멈이 아궁이를 빌려준다. 카드 1장 제거.',25,()=>{
     shopStock.burn=false; openBurn('shop');
   });
+  if(shopStock.temper&&gearTemperCands().length)offer('🖌','주사(朱砂) 덧칠',
+    '할멈이 붉은 획을 덧그린다. 무소속 부적 1장 강화.',40,()=>{
+      shopStock.temper=false; hide('eventOv'); openGearTemper('shop',1);
+    });
   if(party.some(m=>SPIRITS[m.sp].ghost)){
     const lu=document.createElement('button'); lu.className='optcard';
     lu.innerHTML='<div class="pv">🪶</div><div class="tx"><b>신단을 정비한다 — 공짜</b><span>“짐은 덜고 다니는 게 좋아.” 출전 편성.</span></div>';
@@ -3903,9 +3919,10 @@ function renderShop(){
 }
 
 // ---------- 카드 소각 ----------
-let burnFrom='rest';
+let burnFrom='rest', burnKind='burn';
 function openBurn(from){
-  burnFrom=from||'rest';
+  burnFrom=from||'rest'; burnKind='burn';
+  $('burnTitle').textContent='🔥 부적 태우기 — 한 장을 고른다';
   const list=$('burnList'); list.innerHTML='';
   deck.forEach(inst=>{
     const d=CARDS[inst.id], v=cardVals(inst);
@@ -3924,9 +3941,49 @@ function openBurn(from){
 }
 $('btnBurnCancel').addEventListener('click',()=>{
   hide('burnOv');
+  if(burnKind==='temper'){
+    if(temperMode==='shop'){coins+=40;shopStock.temper=true;renderShop();}          // 시작 전 취소 — 환불
+    else if(temperLeft===2)show('rewardOv');                                        // 치성: 첫 획 전 취소 → 보상으로 복귀
+    else finishTemper();                                                            // 한 장이라도 발랐으면 확정
+    return;
+  }
   if(burnFrom==='shop'){coins+=25;shopStock.burn=true;renderShop();}
   else show('restOv');
 });
+
+// ---------- 주사(朱砂) 덧칠 — 무소속 무구 강화 (v0.9, isUp 개통의 획득 접점) ----------
+let temperMode='shop', temperLeft=1;
+function gearTemperCands(){return deck.filter(c=>!c.owner&&!isUp(c)&&!CARDS[c.id].curse);}
+function openGearTemper(mode,count){
+  temperMode=mode; temperLeft=count; burnKind='temper';
+  renderTemperList();
+}
+function renderTemperList(){
+  $('burnTitle').textContent='🖌 주사 덧칠 — 강화할 부적을 고른다'+(temperLeft>1?' ('+temperLeft+'장)':'');
+  const list=$('burnList'); list.innerHTML='';
+  gearTemperCands().forEach(inst=>{
+    const d=CARDS[inst.id];
+    const uv=Object.assign({cost:d.cost},d.v,d.u||{});
+    const el=document.createElement('div'); el.className='minicard pick';
+    el.innerHTML='<div class="band" style="background:#6e5220">'+d.name+rarMark(inst.id)+'</div>'+
+      '<div class="b2">'+cardDesc(cardVals(inst),false,d)+'<br><b style="color:#e0b44a">강화 후:</b> '+cardDesc(uv,false,d)+'</div>';
+    el.addEventListener('click',()=>{
+      inst.up=true; snd.gong();
+      toast('「'+d.name+'」에 핏빛 획이 더해졌다',true);
+      temperLeft--;
+      if(temperLeft>0&&gearTemperCands().length)renderTemperList();
+      else finishTemper();
+    });
+    list.appendChild(el);
+  });
+  show('burnOv');
+}
+function finishTemper(){
+  hide('burnOv'); updateHUD();
+  if(temperMode==='shop')renderShop();
+  else if(pickReturn)pickReturn();
+  else advanceMap();
+}
 
 // ---------- 맵 ----------
 function mkBattleNode(){
