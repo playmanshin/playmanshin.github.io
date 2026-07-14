@@ -981,21 +981,31 @@ function accrueBond(){
   });
   return msgs;
 }
-// 굿거리 듀엣 — 몸주·출전 편성에 따라 대목이 자란다 (v0.9). castGut·신단 설명이 공용
+// 굿거리 듀엣 — 몸주·출전 편성에 따라 대목이 자란다 (v0.9). castGut·신단 설명이 공용.
+// 노트 수치는 최종 fx에서 조립한다 — 성숙 반영 후에도 표시=실제 파리티 (v0.10 적대 검증)
 function gutFxOf(sp){
   const g=GUTS[sp]; if(!g)return null;
-  const f=Object.assign({},g.fx); let note=null;
-  if(sp==='cheonyeo'&&isActiveSp('mongdal')){f.dot=9;note='사혼(死婚) — 몽달귀신이 함께 곡한다: 恨 +9';}
-  if(sp==='mongdal'&&isActiveSp('cheonyeo')){f.weak=4;f.dot=3;note='사혼(死婚) — 처녀귀신이 함께 곡한다: 약화 4·恨 3';}
-  if(sp==='jeoseungsaja'&&party.length&&party[0].sp==='bari'){f.pctDmg=0.25;note='저승길 동무 — 비례 피해 25% (상한 18)';}
-  if(sp==='gaekgwi'&&party.length&&party[0].sp==='samsinhalmi'){f.heal=16;note='제삿밥 한 상 — 회복 16';}
-  if(sp==='dalgyal'&&party.length&&party[0].sp==='chilseong'){f.draw=4;note='무면이 별을 센다 — 드로우 4';}
+  const f=Object.assign({},g.fx); let duetTxt=null;
+  if(sp==='cheonyeo'&&isActiveSp('mongdal')){f.dot=9;duetTxt=()=>'사혼(死婚) — 몽달귀신이 함께 곡한다: 恨 +'+f.dot;}
+  if(sp==='mongdal'&&isActiveSp('cheonyeo')){f.weak=4;f.dot=3;duetTxt=()=>'사혼(死婚) — 처녀귀신이 함께 곡한다: 약화 '+f.weak+'·恨 '+f.dot;}
+  if(sp==='jeoseungsaja'&&party.length&&party[0].sp==='bari'){f.pctDmg=0.25;duetTxt=()=>'저승길 동무 — 비례 피해 '+Math.round(f.pctDmg*100)+'% (상한 18)';}
+  if(sp==='gaekgwi'&&party.length&&party[0].sp==='samsinhalmi'){f.heal=16;duetTxt=()=>'제삿밥 한 상 — 회복 '+f.heal;}
+  if(sp==='dalgyal'&&party.length&&party[0].sp==='chilseong'){f.draw=4;duetTxt=()=>'무면이 별을 센다 — 드로우 '+f.draw;}
+  // 동행 성숙 (bond 6): 수치 ×1.25 반올림(round — ceil은 작은 수치에서 +25%를 넘겼다: strDown 1→2 배증).
+  // 신력(energy)은 제외 — 자원 루프 채널(무면 1→2가 신력 경제를 배증). 타수·이진 효과 불변(다단×배율 금지).
+  // 실제로 자란 수치가 있을 때만 성숙을 표시한다 — 이진 굿(씨름·독옮기기)은 성숙 무보상(알려진 한계)
+  let grew=false;
   const bm=memberOf(sp);
-  if(bm&&(bm.bond||0)>=BOND_GUT){   // 동행 성숙은 듀엣 위에 얹힌다 (恨은 gainHan 캡, 타수는 불변 — 다단×배율 금지 원칙)
-    ['dmg','block','heal','dot','weak','strDown','draw','energy'].forEach(k=>{if(f[k])f[k]=Math.ceil(f[k]*1.25);});
-    note=(note?note+' · ':'')+'동행 성숙 — 대목이 깊어졌다';
+  if(bm&&(bm.bond||0)>=BOND_GUT){
+    ['dmg','block','heal','dot','weak','strDown','draw'].forEach(k=>{
+      if(f[k]){const nv=Math.round(f[k]*1.25);if(nv!==f[k]){f[k]=nv;grew=true;}}
+    });
+    if(f.pctDmg){f.pctDmg=Math.round(f.pctDmg*125)/100;grew=true;}   // 실피해 상한 18은 castGut이 계속 지배
   }
-  return {fx:f,note};
+  const parts=[];
+  if(duetTxt)parts.push(duetTxt());
+  if(grew)parts.push('동행 성숙 — 대목이 깊어졌다');
+  return {fx:f,note:parts.length?parts.join(' · '):null};
 }
 function gearRar(id){return GEAR_RAR[id]||'c';}
 function gearPrice(id){return {c:35,u:45,r:60}[gearRar(id)];}   // 장터가 드래프트 희귀도 게이트를 언더컷하지 않게 (적대 검토)
@@ -2745,7 +2755,10 @@ function toast(msg,long){
 function show(id){$(id).classList.remove('hidden');}
 function hide(id){$(id).classList.add('hidden');}
 const ALL_OV=['titleOv','starterOv','mapOv','draftOv','rewardOv','restOv','eventOv','pickOv','burnOv','scryOv','deckOv','altarOv','interOv','endOv','helpOv'];
-function hideAll(){ALL_OV.forEach(hide);}
+function hideAll(){
+  if(typeof scryResolver!=='undefined'&&scryResolver)resolveScry(false);   // 점괘 대기 중 강제 닫힘 보험 — playCard 영구 대기(행 멈춤) 방지
+  ALL_OV.forEach(hide);
+}
 
 // ---------- 연출 ----------
 let animT=0, shakeT=0, floats=[], sparks=[], ribbons=[], lastHeart=0;
@@ -3951,7 +3964,7 @@ async function winBattle(){
   if(runStats){runStats.battles++;runStats.turns+=rsBattleTurns+1;}
   rsEndCombat(true);
   const bondMsgs=accrueBond();   // 동행 적립 — 출전 귀신만 (v0.10)
-  if(bondMsgs.length)setTimeout(()=>toast('⚯ '+bondMsgs.join(' · '),true),1900);
+  if(bondMsgs.length)setTimeout(()=>toast('⚯ '+bondMsgs.join(' · '),true),(enemy&&enemy.boss)?400:1900);   // 보스는 화면 전환 전에
   enemyFx.dieT=0.7; snd.die(); duckMusic(4,0.5);
   screenFlash('white',0.1); hitStop(0.12);
   wisp(ENEMY_POS[0],ENEMY_POS[1]-46,'#8a8a96',8,40);   // 재가 흩날린다
@@ -4001,18 +4014,17 @@ function defeat(){
 }
 // 합굿 도감 — 몸주×출전 귀신 조합의 최고 금제 기록 (메타 저장, 런 저장·mapVersion 무관) (v0.10)
 function recordDuets(){
-  try{
-    const d=JSON.parse(localStorage.getItem('ms_duet')||'{}');
-    const g=geumje()+1;   // 기록값 = 클리어한 금제 단계 +1 (이야기·금제0 클리어 = 1)
-    let fresh=0;
-    party.filter(m=>SPIRITS[m.sp].ghost&&m.active).forEach(m=>{
-      const k=party[0].sp+':'+m.sp;
-      if(!d[k])fresh++;
-      d[k]=Math.max(d[k]||0,g);
-    });
-    localStorage.setItem('ms_duet',JSON.stringify(d));
-    return {total:Object.keys(d).length,fresh};
-  }catch(e){return {total:0,fresh:0};}
+  let d={};
+  try{d=JSON.parse(localStorage.getItem('ms_duet')||'{}')||{};}catch(e){d={};}   // 손상 저장은 리셋 — 이후 기록은 계속된다
+  const g=geumje()+1;   // 기록값 = 클리어한 금제 단계 +1 (이야기·금제0 클리어 = 1)
+  let fresh=0;
+  party.filter(m=>SPIRITS[m.sp].ghost&&m.active).forEach(m=>{
+    const k=party[0].sp+':'+m.sp;
+    if(!d[k])fresh++;
+    d[k]=Math.max(d[k]||0,g);
+  });
+  try{localStorage.setItem('ms_duet',JSON.stringify(d));}catch(e){}   // 저장 실패해도 이번 화면 표시는 유지
+  return {total:Object.keys(d).length,fresh};
 }
 function victory(){
   const duetRec=recordDuets();

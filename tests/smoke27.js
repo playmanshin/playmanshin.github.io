@@ -63,17 +63,31 @@ const test=`
     assert.equal(discard.filter(c=>c.id==='dongti').length,2,'저주받이 듀엣 1 + 동행 1');
     inBattle=false; stopDrone();
     console.log('[동행3] 주축 개전 보너스·예산 클램프·듀엣 적층 OK');
-    // ---- 3) 동행 6: 굿거리 성숙 +25% (타수 불변, 듀엣 위에 얹힘) ----
+    // ---- 3) 동행 6: 굿거리 성숙 ×1.25 반올림 (타수 불변, 듀엣 위에 얹힘) ----
     party=[G('janggun'),Object.assign(G('cheonyeo'),{bond:6}),G('songaksi')];
     assert.equal(gutFxOf('cheonyeo').fx.dot,8,'곡성 6 → 성숙 8 (듀엣 없음)');
     party=[G('janggun'),Object.assign(G('cheonyeo'),{bond:6}),Object.assign(G('mongdal'),{bond:6})];
-    assert.equal(gutFxOf('cheonyeo').fx.dot,12,'사혼 9 → 성숙 12 (듀엣 위에 중첩)');
+    assert.equal(gutFxOf('cheonyeo').fx.dot,11,'사혼 9 → 성숙 round(11.25)=11 (듀엣 위에 중첩)');
+    assert.ok(gutFxOf('cheonyeo').note.includes('恨 +11'),'노트 수치 = 최종 fx (표시=실제 파리티)');
     party=[G('janggun'),Object.assign(G('songaksi'),{bond:6})];
     assert.equal(gutFxOf('songaksi').fx.hits,4,'천침 타수 불변 — 다단×배율 금지');
     assert.equal(gutFxOf('songaksi').fx.dmg,4,'천침 타당 3 → 4');
     party=[G('janggun'),G('songaksi')];
     assert.equal(gutFxOf('songaksi').fx.dmg,3,'동행 미달 — 기본값');
-    console.log('[동행6] 굿거리 성숙·타수 불변·듀엣 중첩 OK');
+    // 적대 검증 회귀: 신력은 성숙 제외(자원 루프 채널), round는 +25% 상한 준수, 이진 굿은 성숙 표시 없음
+    party=[Object.assign(G('chilseong'),{}),Object.assign(G('dalgyal'),{bond:6})];
+    const dg=gutFxOf('dalgyal');
+    assert.equal(dg.fx.energy,1,'무면 신력 성숙 제외 — 1 유지');
+    assert.equal(dg.fx.draw,5,'듀엣 4 → 성숙 5');
+    assert.ok(dg.note.includes('드로우 5'),'듀엣 노트도 성숙 수치 반영');
+    party=[G('janggun'),Object.assign(G('mongdal'),{bond:6})];
+    assert.equal(gutFxOf('mongdal').fx.strDown,1,'대곡 힘감 1 → round(1.25)=1 (배증 금지)');
+    party=[G('janggun'),Object.assign(G('dokkaebi'),{bond:6})];
+    assert.equal(gutFxOf('dokkaebi').note,null,'이진 굿(씨름)은 성숙 무보상 — 거짓 표기 없음');
+    assert.equal(gutFxOf('dokkaebi').fx.skipTurn,true);
+    party=[G('janggun'),Object.assign(G('jeoseungsaja'),{bond:6})];
+    assert.equal(gutFxOf('jeoseungsaja').fx.pctDmg,0.25,'명부 집행 성숙 0.2→0.25 (상한 18 유지)');
+    console.log('[동행6] 굿거리 성숙(round·신력 제외·노트 파리티·이진 무보상) OK');
     // ---- 4) 동행 저장 왕복 + runStats bonds ----
     party=[G('janggun'),Object.assign(G('cheonyeo'),{bond:4})];
     deck=[]; addCard('bujeok');
@@ -119,8 +133,19 @@ const test=`
     const jg3={uid:uidSeq++,id:'jeomgwae',owner:null}; hand.push(jg3);
     await playCard(jg3,null);
     assert.equal(scryResolver,null,'빈 덱 — 선택 미발생');
+    // hideAll 보험: 대기 중 강제 닫힘이 행 멈춤을 만들지 않는다 (적대 검증 회귀)
+    hand.length=0; energy=3;
+    drawPile=[{uid:9201,id:'bujeok',owner:null}];
+    const jg4={uid:uidSeq++,id:'jeomgwae',owner:null}; hand.push(jg4);
+    p=playCard(jg4,null);
+    for(let i=0;i<40&&!scryResolver;i++)await sleep(30);
+    assert.ok(scryResolver,'선택 대기 진입');
+    hideAll();
+    assert.equal(scryResolver,null,'hideAll이 유지로 자동 응답');
+    await p;
+    assert.equal(busy,false,'playCard 정상 종료 — busy 해제');
     inBattle=false; stopDrone();
-    console.log('[점괘] 파묻기·유지·빈 덱 OK');
+    console.log('[점괘] 파묻기·유지·빈 덱·hideAll 보험 OK');
     // ---- 6) 합굿 도감 ----
     localStorage.removeItem('ms_duet');
     party=[G('janggun'),G('cheonyeo'),G('yeommae'),G('dokkaebi',false)];
@@ -137,7 +162,12 @@ const test=`
     localStorage.setItem('ms_geumje','0');
     recordDuets();
     assert.equal(JSON.parse(localStorage.getItem('ms_duet'))['janggun:cheonyeo'],3,'하위 클리어로 후퇴하지 않음');
-    console.log('[도감] 조합 기록·금제 최고치·후퇴 방지 OK');
+    // 손상 저장 자가 복구 (적대 검증 회귀)
+    localStorage.setItem('ms_duet','{');
+    rec=recordDuets();
+    assert.equal(rec.total,2,'손상 JSON — 리셋 후 이번 기록은 살린다');
+    assert.equal(JSON.parse(localStorage.getItem('ms_duet'))['janggun:cheonyeo'],1,'다음 승리부터 정상 누적');
+    console.log('[도감] 조합 기록·금제 최고치·후퇴 방지·손상 복구 OK');
     console.log('SMOKE_OK');
     process.exit(0);
   }catch(err){console.error('SMOKE_FAIL',err);process.exit(1);}
