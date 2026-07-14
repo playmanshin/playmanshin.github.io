@@ -2,9 +2,17 @@
 
 **한국 무속 호러 덱빌딩 로그라이크.** 애기무당이 네 밤의 진오기굿을 치르며 귀신을 거두거나 보내준다 — 봉인하면 강해지고, 원한이 쌓인다.
 
-- 🎮 **플레이**: [claude.ai 아티팩트](https://claude.ai/code/artifact/138e2e4e-5c59-4e68-aec6-10c770f8bac4) 또는 `index.html`을 브라우저로 열기 (서버 불필요, 모바일 세로 최적화)
-- 📜 **기획서**: [docs/GDD.md](docs/GDD.md) — 버전별 설계 변경 이력 포함
-- ✅ **회귀 테스트**: `cd tests && ./run.sh` (Node.js 필요, `ALL_GREEN`이면 통과)
+> 현재 버전: 빌드 v10.3 · **플레이테스트 단계**
+> 권장 환경: 모바일 세로 360×640 (데스크톱은 창 크기에 맞춰 자동 스케일) · 저장: 브라우저 localStorage (자동 이어하기)
+
+<p align="center">
+  <img src="docs/screenshot.png" width="270" alt="타이틀 화면">
+  <img src="docs/screenshot-battle.png" width="270" alt="전투 — 무당 vs 처녀귀신">
+</p>
+
+- 🎮 **플레이**: `index.html`을 브라우저로 열기 (서버 불필요) 또는 [claude.ai 아티팩트](https://claude.ai/code/artifact/138e2e4e-5c59-4e68-aec6-10c770f8bac4) (claude.ai 로그인이 필요할 수 있음)
+- 📜 **기획서**: [docs/GDD.md](docs/GDD.md) (현행 설계) · [docs/CHANGELOG.md](docs/CHANGELOG.md) (설계 변경 이력·논거)
+- ✅ **회귀 테스트**: `cd tests && ./run.sh` — `ALL_GREEN`이면 통과 (Node 18+ · bash/sed 필요, Windows는 WSL/Git Bash)
 
 ## 핵심 시스템
 
@@ -21,7 +29,7 @@
 
 ## 개발
 
-- 단일 `index.html` (HTML+CSS+JS, 외부 의존성 0). 구조와 규칙은 [CLAUDE.md](CLAUDE.md) / [AGENTS.md](AGENTS.md) 참조.
+- 단일 `index.html` (HTML+CSS+JS, 외부 의존성 0). 작업 규칙·불변식은 [AGENTS.md](AGENTS.md) (기준 문서), Claude 전용 보충은 [CLAUDE.md](CLAUDE.md).
 - 캐릭터는 전부 캔버스 블록 드로잉 → 게임보이식 렌더 파이프라인(4단 램프·디더링·외곽선)을 거친 절차적 픽셀 스프라이트.
 - 수정 후에는 반드시 `tests/run.sh`가 `ALL_GREEN`이어야 한다.
 
@@ -33,4 +41,8 @@
 4. 막별 전투 규칙 차별화, 변종 패턴화
 5. 금제 단계 확장, 메타 해금 (도감·사연)
 
-상세 이력은 `docs/GDD.md`의 버전 로그 참조.
+상세는 [docs/GDD.md](docs/GDD.md) 로드맵 절과 [docs/CHANGELOG.md](docs/CHANGELOG.md) 참조.
+
+## 라이선스
+
+© 2026 audwls624. All rights reserved — 라이선스 미정 (공개 배포 형태 확정 시 결정).
