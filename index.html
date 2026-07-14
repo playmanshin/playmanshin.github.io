@@ -813,6 +813,79 @@ const CARDS={
 };
 const GEAR_POOL=Object.keys(CARDS).filter(k=>CARDS[k].gear);
 
+// ---------- 무구 희귀도·축 태그 (v0.9 드래프트 경제) ----------
+// 희귀도: c=커먼(무색 주식) u=언커먼(축 enabler·고임팩트) r=레어(build-around payoff·신령부 스케일러)
+const GEAR_RAR={
+  sinkal:'c',obanggi:'c',jing:'c',sogeum:'c',pat:'c',geumjul:'c',gyeongmun:'c',neokjeon:'c',
+  gongsu:'c',suhobu:'c',majimakjeol:'c',jeomgwae:'c',salpuri:'c',ssitgimgut:'c',
+  jakdu:'u',buk:'u',sinjangdae:'u',ogugut:'u',hyangbul:'u',gyeolgyejin:'u',nakinbu:'u',
+  indujil:'u',poksalbu:'u',hyeolseo:'u',keunjeol:'u',jijeon:'u',neokoreum:'u',jisin:'u',
+  sinjanggi:'r',sinnaerim:'r',wonhonbul:'r',salnalligi:'r',bijang:'r',sinmyeongpuri:'r',
+  samjaepuri:'r',pitgap:'r',sinbeol:'r'
+};
+// 시너지 축 11종: han恨 str힘 mark낙인 block방어 heal회복 engine패(드로·신력) curse동티 self제물 retain보존 sin신명 sal살(디버프)
+const CARD_AX={
+  sinkal:[],jakdu:['self'],obanggi:['heal'],jing:['sal'],buk:['engine'],sogeum:['block','sal'],
+  pat:['han'],geumjul:['block'],salpuri:['heal'],neokjeon:['engine'],sinjangdae:[],gongsu:['str'],
+  ogugut:[],gyeongmun:['block','engine'],salnalligi:['curse'],ssitgimgut:['block','heal'],
+  sinjanggi:['str'],hyangbul:['heal'],gyeolgyejin:['block'],sinnaerim:['sin'],wonhonbul:['han'],
+  nakinbu:['mark'],indujil:['mark'],poksalbu:['mark'],majimakjeol:['block'],hyeolseo:['self','engine'],
+  suhobu:['retain','block'],bijang:['retain'],sinmyeongpuri:['engine'],keunjeol:['engine','block'],
+  samjaepuri:['engine'],jeomgwae:['engine'],neokoreum:[],jijeon:['engine'],jisin:['block'],
+  pitgap:['self','str'],sinbeol:['han']
+};
+// 신령의 축 — 첫 원소가 주축 (합 판정·드래프트 가중의 기준)
+const SPIRIT_AX={
+  janggun:['str'],yongsin:['block'],sansin:['heal'],chilseong:['engine'],bari:['han'],samsinhalmi:['heal'],
+  cheonyeo:['han'],dalgyal:['engine'],dokkaebi:['str'],mulgwisin:['sal'],eoduksini:['block'],
+  yagwanggwi:['engine'],gaekgwi:['engine','block'],dueoksini:['str','self'],jeoseungsaja:['han'],
+  songaksi:['sal','block'],mongdal:['sal'],yeommae:['han','curse'],jangseung:['block'],
+  myogwi:['heal'],samokgu:['str'],bulgasari:['block'],imugi:['han'],heokkaebi:['curse']
+};
+const AX_LABEL={han:'恨',str:'힘',mark:'낙인',block:'방어',heal:'회복',engine:'패',curse:'동티',self:'제물',retain:'보존',sin:'신명',sal:'살'};
+function gearRar(id){return GEAR_RAR[id]||'c';}
+function deckCount(id){return deck.filter(c=>c.id===id).length;}
+function partyAxes(){const s=new Set();activeMembers().forEach(m=>(SPIRIT_AX[m.sp]||[]).forEach(a=>s.add(a)));return s;}
+function axOverlap(id){const pa=partyAxes();return (CARD_AX[id]||[]).filter(a=>pa.has(a)).length;}
+function wPick(cands,wf){
+  const ws=cands.map(wf), tot=ws.reduce((a,b)=>a+b,0);
+  if(tot<=0)return null;
+  let r=Math.random()*tot;
+  for(let i=0;i<cands.length;i++){r-=ws[i];if(r<0)return cands[i];}
+  return cands[cands.length-1];
+}
+// ---------- 드래프트 3택 롤 (v0.9) ----------
+// 슬롯A=커먼 균등 / 슬롯B=희귀도 롤(커먼60/언커먼40)+시너지 가중 / 슬롯C=커먼55/언커먼30/레어15+pity(정예는 레어 확정)
+// 중복 감쇠: 덱 2장+ 보유 id 제외, 1장 보유 ×0.5. 보장: 셋 다 내 축과 무관하면 슬롯B를 겹침≥1 후보에서 재추첨
+let rareLuck=0.15;   // pity — 레어 미제시 드래프트마다 +0.15, 제시 시 0.15로 리셋. 런 저장에 포함
+function dupW(id){return deckCount(id)>=1?0.5:1;}
+function draftCands(rar,taken){return GEAR_POOL.filter(id=>gearRar(id)===rar&&!taken.includes(id)&&deckCount(id)<2);}
+function rollDraftSlot(rar,taken,syn){
+  let pool=draftCands(rar,taken);
+  if(!pool.length)pool=GEAR_POOL.filter(id=>!taken.includes(id)&&deckCount(id)<2);   // 등급 고갈 폴백
+  if(!pool.length)return null;
+  return wPick(pool,id=>dupW(id)*(syn?(1+2*axOverlap(id)):1));
+}
+function rollDraft(elite){
+  const taken=[];
+  const a=rollDraftSlot('c',taken,false); if(a)taken.push(a);
+  const b=rollDraftSlot(Math.random()<0.6?'c':'u',taken,true); if(b)taken.push(b);
+  const cr=elite?'r':(Math.random()<Math.min(1,rareLuck)?'r':(Math.random()<55/85?'c':'u'));
+  const c=rollDraftSlot(cr,taken,false); if(c)taken.push(c);
+  if(taken.length===3&&taken.every(id=>axOverlap(id)===0)){
+    // 보장 리롤 풀은 대체되는 슬롯B와 같은 희귀도 → 비레어 → 전체 순 — pity(레어 확률) 회계를 오염시키지 않게
+    const cand=r=>GEAR_POOL.filter(id=>id!==taken[0]&&id!==taken[2]&&deckCount(id)<2&&axOverlap(id)>=1&&(r?gearRar(id)===r:true));
+    let synPool=cand(gearRar(taken[1]));
+    if(!synPool.length)synPool=cand().filter(id=>gearRar(id)!=='r');
+    if(!synPool.length)synPool=cand();
+    const nb=synPool.length?wPick(synPool,id=>dupW(id)*(1+2*axOverlap(id))):null;
+    if(nb)taken[1]=nb;
+  }
+  const rareShown=taken.some(id=>gearRar(id)==='r');
+  rareLuck=rareShown?0.15:Math.min(1,rareLuck+0.15);
+  return {cards:taken,rareShown};
+}
+
 // ---------- 유물(무구) ----------
 const RELICS={
   mirrorR:{name:'백동경',desc:'전투 시작 시 방어 8'},
@@ -3601,23 +3674,35 @@ $('btnInterLineup').addEventListener('click',()=>{
   openAltar(true,()=>show('interOv'));
 });
 
-// ---------- 무구 드래프트 ----------
+// ---------- 무구 드래프트 (v0.9: 희귀도 3슬롯 + 시너지 가중 + pity) ----------
+function rarMark(id){const r=gearRar(id);return r==='r'?' ★':(r==='u'?' ◆':'');}
+function axChipsTxt(id){
+  const ax=CARD_AX[id]||[];
+  if(!ax.length)return '';
+  const hit=axOverlap(id)>0;
+  return '<span style="color:'+(hit?'#e0b44a':'#8a8a96')+'">'+ax.map(a=>'「'+AX_LABEL[a]+'」').join('')+(hit?' — 신단과 맞물린다':'')+'</span><br>';
+}
 function showDraft(){
   $('draftTitle').textContent='📿 전리품 — 부적 한 장';
-  $('draftSub').textContent='굿판에 떨어진 무구 중 하나를 줍는다.';
+  const elite=!!(enemy&&enemy.elite);
+  const moonFull=rareLuck>=0.30;                        // pity 상태의 서사 고지 — 롤 전 값 기준
+  const roll=rollDraft(elite);
+  $('draftSub').textContent=(elite?'정예의 유품 — 깊이 잠든 무구(★)가 반드시 섞여 있다.':'굿판에 떨어진 무구 중 하나를 줍는다.')
+    +(moonFull&&!elite?' 달이 만월에 가깝다 — 깊이 잠든 무구가 몸을 뒤척인다.':'');
+  const rec=runStats?{act,shown:roll.cards.slice(),rare:roll.rareShown,syn:roll.cards.filter(id=>axOverlap(id)>0).length,pick:null}:null;
+  if(rec)((runStats.drafts=runStats.drafts||[])).push(rec);
   const oldSkip=$('btnDraftSkip');
   oldSkip.textContent='줍지 않는다 (덱을 가볍게)';
-  oldSkip.onclick=()=>{hide('draftOv');showReward();};
+  oldSkip.onclick=()=>{if(rec)rec.pick='skip';hide('draftOv');showReward();};
   exitBattleUI();
   const row=$('draftRow'); row.innerHTML='';
-  const pool=GEAR_POOL.slice();
-  shuffleA(pool);
-  pool.slice(0,3).forEach(id=>{
-    const d=CARDS[id];
+  roll.cards.forEach(id=>{
+    const d=CARDS[id], v=cardVals({id});
     const el=document.createElement('div'); el.className='draftcard';
-    el.innerHTML='<div class="band" style="background:#6e5220">'+d.name+' ('+(d.xcost?'X':d.cost)+')</div>'+
-      '<div class="b2">'+cardDesc(d.v,false,d)+'</div>';
+    el.innerHTML='<div class="band" style="background:'+(gearRar(id)==='r'?'#8a6210':'#6e5220')+'">'+d.name+rarMark(id)+' ('+(d.xcost?'X':v.cost)+')</div>'+
+      '<div class="b2">'+axChipsTxt(id)+cardDesc(v,false,d)+'</div>';
     el.addEventListener('click',()=>{
+      if(rec)rec.pick=id;
       addCard(id,null); updateHUD(); snd.jingle();
       toast('「'+d.name+'」'+josa(d.name,'을','를')+' 주웠다');
       hide('draftOv'); showReward();
@@ -3747,8 +3832,11 @@ let shopStock=null;
 function openShop(){
   const rpool=Object.keys(RELICS).filter(r=>!relics.includes(r));
   const tpool=Object.keys(TOKENS).filter(t=>!tokens.includes(t)&&haewonPlaceable(t));
+  // 재고 2장 중 1장은 시너지 가중 — 편성이 카드 경제의 조준 장치 (v0.9)
+  const g1=wPick(GEAR_POOL.filter(id=>deckCount(id)<2),dupW);
+  const g2=wPick(GEAR_POOL.filter(id=>id!==g1&&deckCount(id)<2),id=>dupW(id)*(1+2*axOverlap(id)));
   shopStock={
-    gears:shuffleA(GEAR_POOL.slice()).slice(0,2),
+    gears:[g1,g2].filter(Boolean),
     relic:rpool.length?rpool[Math.floor(Math.random()*rpool.length)]:null,
     token:tpool.length?tpool[Math.floor(Math.random()*tpool.length)]:null,
     heal:true, rice:true, burn:true
@@ -3770,7 +3858,7 @@ function renderShop(){
     opts.appendChild(b);
   };
   shopStock.gears.forEach(id=>{
-    offer('📜','부적 「'+CARDS[id].name+'」',cardDesc(CARDS[id].v,false,CARDS[id]),35,()=>{
+    offer('📜','부적 「'+CARDS[id].name+rarMark(id)+'」',axChipsTxt(id)+cardDesc(cardVals({id}),false,CARDS[id]),35,()=>{
       addCard(id,null); shopStock.gears=shopStock.gears.filter(x=>x!==id);
       toast('「'+CARDS[id].name+'」'+josa(CARDS[id].name,'을','를')+' 샀다'); snd.jingle(); renderShop();
     });
@@ -3902,10 +3990,11 @@ let turnCardCount=0, sagiTurnUsed=false, battleHealAcc=0, battleFirstCardUsed=fa
 let exhaustPile=[], battleSelfAcc=0, sacTurnGained=false;   // v0.8: 소멸 더미 / 이번 전투 바친 제물 / 핏값 턴당 1회
 let swapSinTurn=false, gutSwapFree=false, swapDiscountLeft=0, twinbellTurnUsed=false;   // v0.8 강신 댄스: 여흥 턴당 1회 / 맞이굿 무료 전환 / 쌍방울 할인
 function initRunStats(){
-  runStats={v:2,diff:diffMode,bodyGod:party[0]?party[0].sp:null,ts:Date.now(),
+  runStats={v:3,diff:diffMode,bodyGod:party[0]?party[0].sp:null,ts:Date.now(),
     acts:{0:{startHP:teamHP,startMax:teamMax}},dmgTaken:0,outHeal:0,battles:0,turns:0,paths:{},
     chiseong:0,deathAct:null,win:null,
-    combats:[],rewards:[],final:null};   // v2: 전투별·보상별·최종 스냅샷
+    combats:[],rewards:[],final:null,
+    drafts:[]};   // v2: 전투별·보상별·최종 스냅샷 / v3: 드래프트 제시·픽 기록 (픽률·스킵률 계측)
 }
 function rsReward(choice,target){
   if(runStats&&runStats.rewards)runStats.rewards.push({act,enemy:enemy?enemy.sp:null,choice,target:target||null});
@@ -3920,7 +4009,8 @@ function rsFinal(){
   if(!runStats)return;
   runStats.final={hp:teamHP,maxHP:teamMax,deckSize:deck.length,
     upgradedCards:deck.filter(c=>isUp(c)).length,
-    relicCount:relics.length,activeSpirits:activeMembers().map(m=>m.sp),boons:boons.slice()};
+    relicCount:relics.length,activeSpirits:activeMembers().map(m=>m.sp),boons:boons.slice(),
+    deckList:deck.map(c=>c.id+(isUp(c)?'+':''))};   // v3: 승리덱 등장률 계측용
 }
 function rsPath(t){if(runStats)runStats.paths[t]=(runStats.paths[t]||0)+1;}
 function statsSummaryHtml(){
@@ -3953,6 +4043,7 @@ function saveRun(){
       mapVersion:4,diff:diffMode,mapCur,pendingHaewon,boons,
       party,deck,relics,tokens,teamHP,teamMax,act,mapRows,mapPos,depth,
       kills,seals,sendoffs,sinwi,gongdeok,coins,revDone,honsuDone,uidSeq,bless:nextBless,
+      rareLuck,
       runStats
     }));
   }catch(e){}
@@ -3969,7 +4060,8 @@ function loadRun(){
     kills=s.kills;seals=s.seals;sendoffs=s.sendoffs;sinwi=s.sinwi;gongdeok=s.gongdeok;coins=s.coins;
     revDone=!!s.revDone;honsuDone=!!s.honsuDone;uidSeq=s.uidSeq||1000;nextBless=!!s.bless;
     runStats=s.runStats||null;
-    if(runStats){runStats.combats=runStats.combats||[];runStats.rewards=runStats.rewards||[];}   // v1 저장 호환
+    if(runStats){runStats.combats=runStats.combats||[];runStats.rewards=runStats.rewards||[];runStats.drafts=runStats.drafts||[];}   // v1/v2 저장 호환
+    rareLuck=(typeof s.rareLuck==='number')?s.rareLuck:0.15;
     diffMode=s.diff||'bongut';                            // 난이도는 런에 귀속
     channeled=null;
     renderRelics();updateHUD();
