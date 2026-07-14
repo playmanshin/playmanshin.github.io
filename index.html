@@ -3999,6 +3999,16 @@ $('cWon').style.cursor='pointer';
 $('cWon').addEventListener('click',()=>toast('원한: 봉인한 귀신들의 응어리 — 4마다 전투에 동티 1장. 전투 중의 恨은 별개로, 매 턴 피해를 주는 살(煞)이다.',true));
 $('btnEndRestart').addEventListener('click',()=>{snd.tap();hideAll();showTitle();});
 $('btnEnd').addEventListener('click',endTurn);
+// 빈 공간 탭 = 카드 선택 해제 (손패 전체 다시 보기)
+frameEl.addEventListener('click',e=>{
+  if(!selCard)return;
+  const t=e.target;
+  if(t&&t.closest&&(t.closest('.card')||t.closest('button')))return;
+  selCard=null; renderHand();
+});
+addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&selCard){selCard=null;renderHand();}
+});
 const GEUMJE_DESC=['없음','동티 +1','동티 +1 · 적 체력 +15%','동티 +1 · 체력 +15% · 적 힘 +1'];
 function showTitle(){
   hideAll(); stopDrone();
