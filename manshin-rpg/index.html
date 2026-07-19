@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#120d1a" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23120d1a'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%238f2f28'/%3E%3Crect x='5' y='5' width='6' height='6' fill='%23f2e6c9'/%3E%3C/svg%3E" />
+    <style>
+      html { background: #0a0710; color-scheme: dark; }
+      body { margin: 0; }
+    </style>
+    <title>만신: 령의 길</title>
+    <script type="module" crossorigin src="./assets/index-CpDvZ0OK.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-_14CAAD9.css">
+  </head>
+  <body>
+    <main id="game-shell">
+      <section id="game-frame" aria-label="만신 령의 길 게임 화면">
+        <div id="game-canvas" aria-hidden="true"></div>
+
+        <header id="hud" class="hud-layer">
+          <div class="brand-lockup window" aria-label="게임 제목">
+            <span class="brand-mark">萬</span>
+            <span><b>만신</b><small>령의 길</small></span>
+          </div>
+          <button id="active-spirit" class="hud-chip spirit-chip window" type="button" aria-label="령첩 열기">
+            <i class="type-dot"></i><span class="spirit-name">장군신</span><em>빙의중</em>
+          </button>
+          <button id="open-journal" class="hud-chip window" type="button">령첩 <b id="collection-count">0/23</b></button>
+          <button id="open-menu" class="hud-chip window" type="button">메뉴</button>
+          <div class="hud-chip coin-chip window" aria-label="보유 엽전"><span>엽전</span> <b id="coin-count">60</b></div>
+          <div class="hud-chip talisman-chip window" aria-label="남은 매듭부적"><span>매듭</span> <b id="talisman-count">8</b></div>
+        </header>
+
+        <aside id="objective" class="paper-chip window hud-layer">
+          <span id="objective-act">첫째 거리</span>
+          <b id="objective-text">고갯마루의 목소리를 쫓자</b>
+          <small id="quest-text">곁굿 · 서낭할미에게 고개의 사정을 듣자</small>
+        </aside>
+
+        <div id="area-label" class="area-label hud-layer" aria-live="polite">
+          <small id="area-subtitle">첫째 거리 · 부정거리</small>
+          <strong id="area-name">서낭당 고개</strong>
+        </div>
+
+        <section id="dialogue" class="dialogue window hidden" aria-live="polite">
+          <span class="speaker">방울소리</span>
+          <p>령무 속에서 낯선 기척이 느껴진다.</p>
+          <i>▼</i>
+        </section>
+
+        <!-- 예/아니오 선택창 — 1세대 문법: 대화창 위 오른쪽에 뜬다. -->
+        <nav id="dialogue-choice" class="dialogue-choice window hidden" aria-label="선택"></nav>
+
+        <!-- 곁굿 제목 카드 — 곁굿을 맡거나 마치는 순간 중앙에 잠깐 뜬다. -->
+        <div id="quest-card" class="quest-card window hidden" aria-live="polite">
+          <span>곁굿</span>
+          <h3 id="quest-card-title">금줄을 다시 잇는 손</h3>
+          <b id="quest-card-verb">맡았다</b>
+        </div>
+
+        <section id="battle-ui" class="battle-ui hidden" aria-label="령 전투">
+          <div class="combatant enemy-card window">
+            <div class="combatant-title"><span id="enemy-name">달걀귀신</span><small id="enemy-level">초령 2</small></div>
+            <div class="hp-row"><b>HP</b><div class="hp-track"><i id="enemy-hp-bar"></i></div></div>
+            <small id="enemy-hp-text">22 / 22</small>
+            <div class="type-line"><i id="enemy-type-dot"></i><span id="enemy-type">음토 · 황방</span></div>
+          </div>
+          <div class="combatant ally-card window">
+            <div class="combatant-title"><span id="ally-name">장군신</span><small id="ally-level">초령 3</small></div>
+            <div class="hp-row"><b>HP</b><div class="hp-track"><i id="ally-hp-bar"></i></div></div>
+            <small id="ally-hp-text">28 / 28</small>
+            <div class="type-line"><i id="ally-type-dot"></i><span id="ally-type">양금 · 백방</span></div>
+          </div>
+          <div id="battle-message" class="battle-message window" aria-live="assertive">령과 눈이 마주쳤다.</div>
+          <div id="battle-commands" class="battle-commands window">
+            <!-- 루트 — 1세대식 네 가지 행동 -->
+            <div id="battle-menu-root" class="battle-menu">
+              <button id="fight-button" class="fight-command" type="button" data-battle-menu="fight"><b>싸운다</b><span>모신 령의 기술을 쓴다</span></button>
+              <button type="button" data-battle-menu="possess"><b>교대하기</b><span>몸에 모실 령을 고른다</span></button>
+              <button class="knot-command" type="button" data-battle-menu="bag"><b>가방</b><span>부적과 물건을 꺼낸다</span></button>
+              <button class="flee-command" type="button" data-battle-action="flee"><b>도망친다</b><span>금줄 밖으로 피한다</span></button>
+            </div>
+            <!-- 기술 — 왼쪽 목록 + 오른쪽 설명 (1세대 기술창) -->
+            <div id="battle-menu-fight" class="battle-menu battle-menu-fight hidden">
+              <div class="skill-list" role="menu">
+                <button type="button" data-battle-action="skill-0" data-skill-slot="0"><b id="skill-0-name">신칼베기</b><i id="skill-0-pp" class="skill-pp"></i></button>
+                <button type="button" data-battle-action="skill-1" data-skill-slot="1"><b id="skill-1-name">철갑호령</b><i id="skill-1-pp" class="skill-pp"></i></button>
+                <button id="struggle-button" class="hidden" type="button" data-battle-action="struggle" data-skill-slot="struggle"><b>몸부림</b></button>
+                <button id="gut-button" class="gut-command" type="button" data-battle-action="gut" data-skill-slot="gut"><i class="gut-seal">降</i><b id="gut-name">참수</b></button>
+                <button class="back-command" type="button" data-battle-menu="back"><b>돌아간다</b></button>
+              </div>
+              <aside id="skill-detail" class="skill-detail" aria-live="polite">
+                <b id="skill-detail-name">신칼베기</b>
+                <span id="skill-detail-type">양금 · 공격</span>
+                <span id="skill-detail-power">위력 7 · 명중 100</span>
+                <p id="skill-detail-desc">신칼이 달빛을 가른다.</p>
+              </aside>
+            </div>
+            <!-- 교대 — 살아 있는 령 목록 -->
+            <div id="battle-menu-possess" class="battle-menu battle-menu-list hidden">
+              <div id="possess-list" class="battle-choice-list"></div>
+              <button class="back-command" type="button" data-battle-menu="back"><b>돌아간다</b></button>
+            </div>
+            <!-- 가방 — 매듭부적(거두기) + 소지품 -->
+            <div id="battle-menu-bag" class="battle-menu battle-menu-list hidden">
+              <div id="bag-list" class="battle-choice-list">
+                <button type="button" data-battle-action="bind"><b>매듭부적 던지기</b><span id="bind-chance">부적 8장</span></button>
+              </div>
+              <button class="back-command" type="button" data-battle-menu="back"><b>돌아간다</b></button>
+            </div>
+          </div>
+        </section>
+
+        <nav id="mobile-controls" class="mobile-controls hud-layer" aria-label="터치 조작">
+          <div class="dpad">
+            <button type="button" data-input="up" aria-label="위로"></button>
+            <button type="button" data-input="left" aria-label="왼쪽"></button>
+            <button type="button" data-input="down" aria-label="아래"></button>
+            <button type="button" data-input="right" aria-label="오른쪽"></button>
+            <i class="dpad-hub" aria-hidden="true"></i>
+          </div>
+          <div class="face-buttons">
+            <button class="face-button face-b" type="button" data-input="cancel" aria-label="물러(취소)"><b>B</b><span>물러</span></button>
+            <button class="face-button face-a" type="button" data-input="confirm" aria-label="방울(확인)"><b>A</b><span>방울</span></button>
+          </div>
+        </nav>
+
+        <div id="title-screen" class="overlay title-screen">
+          <div class="moon" aria-hidden="true"><i></i><i></i><i></i></div>
+          <div class="title-copy">
+            <span class="eyebrow">KOREAN FOLKLORE COLLECTION RPG</span>
+            <h1><small>萬神</small> 만신</h1>
+            <h2>령의 길</h2>
+            <p>귀문이 열린 달밤.<br />떠도는 이름을 거두어, 몸에 모셔라.</p>
+          </div>
+          <button id="start-game" class="main-button window" type="button"><span>방울을 든다</span><small>ENTER / TAP</small></button>
+          <div class="controls-hint"><b>이동</b> 방향키 · WASD <i></i> <b>살피기</b> SPACE · ENTER</div>
+          <small class="prototype-label">PLAYABLE PROTOTYPE · 독자적 세계관과 원본 픽셀 아트</small>
+        </div>
+
+        <div id="starter-screen" class="overlay starter-screen hidden" role="dialog" aria-modal="true" aria-labelledby="starter-title">
+          <div class="starter-heading">
+            <span>神病 · 무당 선택</span>
+            <h2 id="starter-title">누구의 몸에<br />신이 내렸나</h2>
+            <p>신병을 앓다 신내림을 받은 아이. 산마루 신령 나무로 올라가 첫 몸주신을 모시게 됩니다.</p>
+          </div>
+          <div id="starter-list" class="starter-list"></div>
+          <button id="back-to-title" class="text-button" type="button">돌아가기</button>
+        </div>
+
+        <!-- 1세대식 코너 메뉴 — 월드 위에 작은 세로 리스트가 뜬다. -->
+        <nav id="corner-menu" class="corner-menu window hud-layer hidden" aria-label="게임 메뉴">
+          <button type="button" data-corner-item="spirits">령첩</button>
+          <button type="button" data-corner-item="party">모신 령</button>
+          <button type="button" data-corner-item="quests">곁굿</button>
+          <button type="button" data-corner-item="items">소지품</button>
+          <button type="button" data-corner-item="mudang">무당</button>
+          <button type="button" data-corner-item="save">저장</button>
+          <button type="button" data-corner-item="system">나가기</button>
+          <button type="button" data-corner-item="close">닫는다</button>
+        </nav>
+
+        <div id="journal" class="overlay panel-overlay game-menu window hidden" role="dialog" aria-modal="true" aria-labelledby="journal-title">
+          <div class="panel-header">
+            <div><span>神堂記錄</span><h2 id="journal-title">령첩</h2></div>
+            <button id="close-journal" type="button" aria-label="메뉴로 돌아가기">×</button>
+          </div>
+
+          <section class="menu-panel" data-menu-panel="spirits">
+            <p class="panel-intro">굿거리에서 만난 이름들의 기록. 아직 못 만난 넋은 그림자로 남는다.</p>
+            <div id="journal-list" class="journal-list"></div>
+            <div class="legend"><b>음양오행 상성</b><span>목 → 토 → 수 → 화 → 금 → 목 · 음↔양 충돌</span></div>
+          </section>
+
+          <section class="menu-panel hidden" data-menu-panel="party">
+            <p class="panel-intro">지금 데리고 걷는 령들. 몸에 모실 령을 여기서 정한다.</p>
+            <div id="party-list" class="journal-list"></div>
+          </section>
+
+          <section class="menu-panel hidden" data-menu-panel="quests">
+            <p class="panel-intro">거리마다 하나씩 얽힌 마을의 사연. 곁굿을 마쳐야 봉인문의 문지기가 응답한다.</p>
+            <div id="quest-list" class="quest-list"></div>
+          </section>
+
+          <section class="menu-panel hidden" data-menu-panel="mudang">
+            <div id="mudang-card" class="mudang-card">
+              <div class="mudang-portrait"><canvas id="mudang-canvas"></canvas></div>
+              <div class="mudang-info">
+                <h3 id="mudang-name">달래</h3>
+                <p id="mudang-title">한을 달래는 아기무당</p>
+                <dl class="mudang-stats">
+                  <div><dt>령첩</dt><dd id="mudang-collection">0/18</dd></div>
+                  <div><dt>문지기</dt><dd id="mudang-bosses">0/5</dd></div>
+                  <div><dt>엽전</dt><dd id="mudang-coins">60닢</dd></div>
+                  <div><dt>매듭부적</dt><dd id="mudang-talismans">8장</dd></div>
+                </dl>
+                <p class="mudang-tokens-label">징표</p>
+                <p id="mudang-tokens" class="mudang-tokens">아직 없음</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="menu-panel hidden" data-menu-panel="items">
+            <div class="menu-section-heading"><div><span>所持品</span><h3>소지품</h3></div><b>엽전 <i id="inventory-coin-count">60</i>닢</b></div>
+            <p class="panel-intro">길에서 찾거나 상점에서 산 물건이다. 길 위에서는 여기서, 굿판에서는 가방으로 꺼내 쓴다.</p>
+            <div id="inventory-list" class="inventory-list"></div>
+            <div id="shop-section" class="shop-section hidden">
+              <div class="menu-section-heading"><div><span>市廛</span><h3 id="shop-name">약초꾼의 가게</h3></div><b>물건을 고르자</b></div>
+              <div id="shop-list" class="inventory-list"></div>
+            </div>
+            <p id="item-message" class="menu-feedback" aria-live="polite"></p>
+          </section>
+
+          <section class="menu-panel hidden" data-menu-panel="save">
+            <div class="menu-section-heading"><div><span>記錄</span><h3>여정 저장</h3></div><b>자동 저장 사용 중</b></div>
+            <div class="save-card">
+              <span>현재 위치</span><strong id="save-location">첫째 거리 · 서낭당 고개</strong>
+              <p id="save-progress">령 0/23 · 문지기 0/5 · 곁굿 0/5</p>
+            </div>
+            <p class="panel-intro">이동·전투·상점·퀘스트 진행은 자동 저장된다. 아래 버튼으로 지금 상태를 한 번 더 기록할 수 있다.</p>
+            <button id="manual-save" class="menu-primary-button" type="button">지금 저장하기</button>
+            <p id="save-message" class="menu-feedback" aria-live="polite"></p>
+          </section>
+
+          <section class="menu-panel hidden" data-menu-panel="system">
+            <div class="menu-section-heading"><div><span>歸還</span><h3>여정에서 나가기</h3></div></div>
+            <div class="control-card"><b>조작</b><span>이동 · 방향키 / WASD</span><span>살피기 · SPACE / ENTER / E</span><span>메뉴 · ESC</span></div>
+            <p class="panel-intro">타이틀로 돌아가도 현재 여정은 유지된다. 다시 방울을 들면 저장된 자리에서 계속한다.</p>
+            <button id="return-to-title" class="menu-danger-button" type="button">저장하고 타이틀로</button>
+            <div class="menu-section-heading"><div><span>初心</span><h3>새 여정</h3></div></div>
+            <p class="panel-intro">지금까지 거둔 이름과 걸어온 길을 모두 지우고 처음부터 다시 시작한다. 되돌릴 수 없다.</p>
+            <button id="erase-save" class="menu-danger-button" type="button">여정을 지우고 처음부터</button>
+            <p id="erase-message" class="menu-feedback" aria-live="polite"></p>
+          </section>
+        </div>
+
+        <div id="collection-complete" class="overlay complete-overlay hidden" role="dialog" aria-modal="true">
+          <div id="complete-seal" class="complete-seal">結</div>
+          <span id="ending-kicker">진오기굿 · 일단락</span>
+          <h2 id="ending-title">귀문 앞에서<br />마지막 방울을 울렸다</h2>
+          <p id="ending-body">령은 도구가 아니라 사연이다.<br /><b id="ending-collection">0/23령 · 문지기 5/5</b><br />남은 이름은 다시 굿판을 걸으며 만날 수 있다.</p>
+          <button id="continue-exploring" class="main-button window" type="button"><span>계속 둘러보기</span></button>
+        </div>
+
+        <div id="rotate-notice">화면을 세로로 돌리면 더 편하게 놀 수 있어요.</div>
+      </section>
+    </main>
+  </body>
+</html>
