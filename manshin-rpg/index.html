@@ -10,8 +10,8 @@
       body { margin: 0; }
     </style>
     <title>만신: 령의 길</title>
-    <script type="module" crossorigin src="./assets/index-BuVgJK0H.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-TA2ZZIEV.css">
+    <script type="module" crossorigin src="./assets/index-C34HkNGo.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CcNHrzJp.css">
   </head>
   <body>
     <main id="game-shell">
@@ -157,6 +157,7 @@
           <button type="button" data-corner-item="items">소지품</button>
           <button type="button" data-corner-item="mudang">무당</button>
           <button type="button" data-corner-item="save">저장</button>
+          <button type="button" data-corner-item="options">차림</button>
           <button type="button" data-corner-item="system">나가기</button>
           <button type="button" data-corner-item="close">닫는다</button>
         </nav>
@@ -221,6 +222,27 @@
             <p class="panel-intro">이동·전투·상점·퀘스트 진행은 자동 저장된다. 아래 버튼으로 지금 상태를 한 번 더 기록할 수 있다.</p>
             <button id="manual-save" class="menu-primary-button" type="button">지금 저장하기</button>
             <p id="save-message" class="menu-feedback" aria-live="polite"></p>
+          </section>
+
+          <section class="menu-panel hidden" data-menu-panel="options">
+            <div class="menu-section-heading"><div><span>設定</span><h3>굿판 차림</h3></div></div>
+            <div class="option-row">
+              <div><b>소리</b><small>방울·징·장구 장단과 효과음 (M 키로도 켜고 끈다)</small></div>
+              <button id="option-sound" class="menu-primary-button" type="button" aria-pressed="true">켬</button>
+            </div>
+            <div class="option-row">
+              <div><b>글 속도</b><small>대화문이 찍히는 빠르기</small></div>
+              <button id="option-text-speed" class="menu-primary-button" type="button">보통</button>
+            </div>
+            <div class="option-row">
+              <div><b>전투 연출</b><small>끄면 굿거리 시네마틱과 타격 연출을 건너뛴다</small></div>
+              <button id="option-battle-fx" class="menu-primary-button" type="button" aria-pressed="true">켬</button>
+            </div>
+            <div class="option-row">
+              <div><b>높은 대비</b><small>글자와 창의 대비를 올려 읽기 쉽게 한다</small></div>
+              <button id="option-contrast" class="menu-primary-button" type="button" aria-pressed="false">끔</button>
+            </div>
+            <p class="panel-intro">설정은 이 기기에 남는다 — 여정 기록과는 따로 저장된다.</p>
           </section>
 
           <section class="menu-panel hidden" data-menu-panel="system">
