@@ -1,0 +1,32 @@
+{
+  "name": "만신: 령의 길",
+  "short_name": "만신",
+  "description": "귀문이 열린 달밤, 떠도는 령의 이름과 사연을 거두는 한국 무속 령 수집 RPG.",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#120d1a",
+  "theme_color": "#120d1a",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
