@@ -32,8 +32,8 @@
       body { margin: 0; }
     </style>
     <title>만신: 령의 길</title>
-    <script type="module" crossorigin src="./assets/index-0TLprSja.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-DiEBrTCC.css">
+    <script type="module" crossorigin src="./assets/index-HiDsiNu3.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-Bcqdy_We.css">
   </head>
   <body>
     <main id="game-shell">
@@ -58,6 +58,7 @@
           <span id="objective-act">첫째 거리</span>
           <b id="objective-text">고갯마루의 목소리를 쫓자</b>
           <small id="quest-text">본굿 · 서낭할미에게 고개의 사정을 듣자</small>
+          <small id="guide-text" class="guide-text hidden">길잡이 · 고개를 걸어 보자</small>
         </aside>
 
         <div id="area-label" class="area-label hud-layer" aria-live="polite">
@@ -195,6 +196,7 @@
           <button type="button" data-corner-item="spirits">령첩</button>
           <button type="button" data-corner-item="party">모신 령</button>
           <button type="button" data-corner-item="quests">본굿</button>
+          <button type="button" data-corner-item="atlas">길그림</button>
           <button type="button" data-corner-item="items">소지품</button>
           <button type="button" data-corner-item="mudang">무당</button>
           <button type="button" data-corner-item="save">저장</button>
@@ -242,8 +244,17 @@
                 <p id="mudang-tokens" class="mudang-tokens">아직 없음</p>
                 <p class="mudang-tokens-label">스승의 다섯 매듭</p>
                 <div id="mudang-knots" class="mudang-knots"></div>
+                <p class="mudang-tokens-label">령의 재주</p>
+                <div id="mudang-abilities" class="mudang-knots"></div>
               </div>
             </div>
+          </section>
+
+          <!-- 길그림 — 다닌 길의 지도. 여기서 이동하지는 않는다(이동은 성황당 노정기). -->
+          <section class="menu-panel hidden" data-menu-panel="atlas">
+            <div class="menu-section-heading"><div><span>路 圖</span><h3>길그림</h3></div><b id="atlas-here">서낭당 고개</b></div>
+            <p class="panel-intro">밟은 길은 또렷하고, 들은 길은 흐리고, 아직 모르는 길은 물음표로 남는다. 거리 사이의 이동은 성황당의 「노정기」가 맡는다.</p>
+            <div id="atlas-list" class="atlas-list"></div>
           </section>
 
           <section class="menu-panel hidden" data-menu-panel="items">
