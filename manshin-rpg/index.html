@@ -32,8 +32,8 @@
       body { margin: 0; }
     </style>
     <title>만신: 령의 길</title>
-    <script type="module" crossorigin src="./assets/index-_UjXVrFP.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-AscbDDjr.css">
+    <script type="module" crossorigin src="./assets/index-D2AgjYTP.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-BZarh5GP.css">
   </head>
   <body>
     <main id="game-shell">
@@ -53,13 +53,6 @@
           <div class="hud-chip coin-chip window" aria-label="보유 엽전"><span>엽전</span> <b id="coin-count">60</b></div>
           <div class="hud-chip talisman-chip window" aria-label="남은 매듭부적"><span>매듭</span> <b id="talisman-count">8</b></div>
         </header>
-
-        <aside id="objective" class="paper-chip window hud-layer">
-          <span id="objective-act">첫째 거리</span>
-          <b id="objective-text">고갯마루의 목소리를 쫓자</b>
-          <small id="quest-text">퀘스트 · 서낭할미에게 고개의 사정을 듣자</small>
-          <small id="guide-text" class="guide-text hidden">길잡이 · 고개를 걸어 보자</small>
-        </aside>
 
         <div id="area-label" class="area-label hud-layer" aria-live="polite">
           <small id="area-subtitle">첫째 거리 · 부정거리</small>
@@ -163,7 +156,7 @@
           <nav id="title-menu" class="title-menu window" aria-label="시작 메뉴">
             <button id="title-new" type="button"><b>새 게임</b></button>
             <button id="title-continue" type="button" disabled><b>불러오기</b></button>
-            <button id="title-options" type="button"><b>설정</b></button>
+            <button id="title-options" type="button"><b>설정</b><small>걷기 · 전투 · 글 속도</small></button>
             <a href="https://discord.gg/VbpQQJeWG" target="_blank" rel="noopener noreferrer"><b>Discord 피드백</b><small>버그 제보 · 플레이 후기</small></a>
           </nav>
           <div class="controls-hint"><b>이동</b> 방향키 · WASD <i></i> <b>살피기</b> SPACE · ENTER</div>
@@ -223,7 +216,7 @@
           </section>
 
           <section class="menu-panel hidden" data-menu-panel="quests">
-            <p class="panel-intro">거리마다 하나씩 얽힌 마을의 굿과, 길에서 맡은 곁가지. 거리의 굿을 마쳐야 봉인문의 문지기가 응답한다.</p>
+            <p class="panel-intro">거리마다 얽힌 본굿과 길에서 맡은 이야기. 지금 해야 할 일은 바로 보이고, 각 기록을 펼치면 사연·목적지·필요한 준비·지나온 발자취가 이어진다.</p>
             <div id="quest-list" class="quest-list"></div>
           </section>
 
@@ -281,6 +274,14 @@
 
           <section class="menu-panel hidden" data-menu-panel="options">
             <div class="menu-section-heading"><div><span>設定</span><h3>굿판 차림</h3></div></div>
+            <div class="option-row">
+              <div><b>걷기 속도</b><small>주인공이 길에서 한 칸씩 걷는 빠르기</small></div>
+              <button id="option-movement-speed" class="menu-primary-button" type="button">보통</button>
+            </div>
+            <div class="option-row">
+              <div><b>전투 속도</b><small>굿판의 메시지와 모든 전투 연출이 흐르는 빠르기</small></div>
+              <button id="option-battle-speed" class="menu-primary-button" type="button">보통</button>
+            </div>
             <div class="option-row">
               <div><b>소리</b><small>방울·징·장구 장단과 효과음 (M 키로도 켜고 끈다)</small></div>
               <button id="option-sound" class="menu-primary-button" type="button" aria-pressed="true">켬</button>
