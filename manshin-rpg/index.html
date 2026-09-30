@@ -33,8 +33,8 @@
       body { margin: 0; }
     </style>
     <title>만신: 령의 길</title>
-    <script type="module" crossorigin src="./assets/index-CviQ0RPC.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-Do1DBps3.css">
+    <script type="module" crossorigin src="./assets/index-BP-jn2P1.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-qKgSS0JK.css">
   </head>
   <body>
     <main id="game-shell">
@@ -127,17 +127,23 @@
                 <p id="skill-detail-desc">신칼이 달빛을 가른다.</p>
               </aside>
             </div>
-            <!-- 교대 — 살아 있는 령 목록 -->
+            <!-- 교대 — 판단 화면: 후보(초령·오행·생명 줄·상태) + 커서가 닿은 후보의 대비 한 줄 -->
             <div id="battle-menu-possess" class="battle-menu battle-menu-list hidden">
-              <div id="possess-list" class="battle-choice-list"></div>
-              <button class="back-command" type="button" data-battle-menu="back"><b data-i18n="battle.back">돌아간다</b></button>
+              <div id="possess-list" class="battle-choice-list swap-list"></div>
+              <div class="battle-list-foot">
+                <p id="possess-detail" class="battle-choice-detail" aria-live="polite"></p>
+                <button class="back-command" type="button" data-battle-menu="back"><b data-i18n="battle.back">돌아간다</b></button>
+              </div>
             </div>
-            <!-- 가방 — 매듭부적(거두기) + 소지품 -->
+            <!-- 가방 — 매듭부적(거두기) + 소지품. 못 쓰는 줄은 흐리고, 까닭은 아래 한 줄이 말한다 -->
             <div id="battle-menu-bag" class="battle-menu battle-menu-list hidden">
               <div id="bag-list" class="battle-choice-list">
                 <button type="button" data-battle-action="bind"><b>매듭부적 던지기</b><span id="bind-chance">부적 8장</span></button>
               </div>
-              <button class="back-command" type="button" data-battle-menu="back"><b data-i18n="battle.back">돌아간다</b></button>
+              <div class="battle-list-foot">
+                <p id="bag-detail" class="battle-choice-detail" aria-live="polite"></p>
+                <button class="back-command" type="button" data-battle-menu="back"><b data-i18n="battle.back">돌아간다</b></button>
+              </div>
             </div>
           </div>
         </section>
@@ -167,7 +173,8 @@
             <button id="title-options" type="button"><b data-i18n="title.options">설정</b><small data-i18n="title.options.hint">걷기 · 전투 · 글 속도</small></button>
             <a href="https://discord.gg/VbpQQJeWG" target="_blank" rel="noopener noreferrer"><b data-i18n="title.discord">Discord 피드백</b><small data-i18n="title.discord.hint">버그 제보 · 플레이 후기</small></a>
           </nav>
-          <div class="controls-hint" data-i18n-html="title.controls"><b>이동</b> 방향키 · WASD <i></i> <b>살피기</b> SPACE · ENTER</div>
+          <!-- 조작 안내는 UIController가 지금 바인딩에서 다시 그린다(input/keyHints.ts) — 아래는 기본 매핑의 꼴. -->
+          <div id="title-controls" class="controls-hint"><b>이동</b> 방향키·WASD <i></i> <b>살피기</b> A(ENTER·SPACE)</div>
           <small class="prototype-label" data-i18n="title.prototype">PLAYABLE PROTOTYPE · 독자적 세계관과 원본 픽셀 아트</small>
           <small id="app-version" class="version-label" aria-hidden="true"></small>
         </div>
@@ -200,6 +207,7 @@
           <button type="button" data-corner-item="atlas" data-i18n="corner.atlas">길그림</button>
           <button type="button" data-corner-item="items" data-i18n="corner.items">소지품</button>
           <button type="button" data-corner-item="mudang" data-i18n="corner.mudang">무당</button>
+          <button type="button" data-corner-item="glossary" data-i18n="corner.glossary">무속 풀이</button>
           <button type="button" data-corner-item="save" data-i18n="corner.save">저장</button>
           <button type="button" data-corner-item="options" data-i18n="corner.options">설정</button>
           <button type="button" data-corner-item="system" data-i18n="corner.system">나가기</button>
@@ -214,6 +222,8 @@
 
           <section class="menu-panel" data-menu-panel="spirits">
             <p class="panel-intro" data-i18n="panel.spirits.intro">굿거리에서 만난 이름들의 기록. 아직 못 만난 넋은 그림자로 남는다.</p>
+            <!-- 미수집 거름 — 아직 령첩에 오르지 않은 이름만 남긴다(기기 설정). 눌린 상태는 aria-pressed가 쥔다. -->
+            <div class="ledger-toolbar"><button type="button" class="ledger-filter" data-ledger-filter aria-pressed="false" data-i18n="ledger.filter">미수집만 보기</button></div>
             <div id="journal-list" class="journal-list"></div>
             <div class="legend"><b data-i18n="panel.spirits.legend">음양오행 상성</b><span data-i18n="panel.spirits.legend.note">목 → 토 → 수 → 화 → 금 → 목 · 음↔양 충돌</span></div>
           </section>
@@ -228,6 +238,7 @@
             <div id="quest-list" class="quest-list"></div>
           </section>
 
+          <!-- 무당 — 위는 트레이너 카드(초상·별호·네 셈), 아래는 창 너비를 다 쓰는 기록 세 칸. -->
           <section class="menu-panel hidden" data-menu-panel="mudang">
             <div id="mudang-card" class="mudang-card">
               <div class="mudang-portrait"><canvas id="mudang-canvas"></canvas></div>
@@ -241,19 +252,34 @@
                   <div><dt data-i18n="mudang.stat.coins">엽전</dt><dd id="mudang-coins">60닢</dd></div>
                   <div><dt data-i18n="mudang.stat.talismans">매듭부적</dt><dd id="mudang-talismans">8장</dd></div>
                 </dl>
-                <p class="mudang-tokens-label" data-i18n="mudang.tokens.label">징표</p>
-                <p id="mudang-tokens" class="mudang-tokens">아직 없음</p>
-                <p class="mudang-tokens-label" data-i18n="mudang.knots.label">스승의 다섯 매듭</p>
-                <div id="mudang-knots" class="mudang-knots"></div>
-                <p class="mudang-tokens-label" data-i18n="mudang.abilities.label">령의 재주</p>
-                <div id="mudang-abilities" class="mudang-knots"></div>
               </div>
+            </div>
+            <div class="mudang-records">
+              <section class="mudang-record">
+                <h4 class="mudang-tokens-label" data-i18n="mudang.tokens.label">징표</h4>
+                <p id="mudang-tokens" class="mudang-tokens">아직 없음</p>
+              </section>
+              <section class="mudang-record">
+                <h4 class="mudang-tokens-label" data-i18n="mudang.knots.label">스승의 다섯 매듭</h4>
+                <div id="mudang-knots" class="mudang-knots"></div>
+              </section>
+              <section class="mudang-record">
+                <h4 class="mudang-tokens-label" data-i18n="mudang.abilities.label">령의 재주</h4>
+                <div id="mudang-abilities" class="mudang-knots"></div>
+              </section>
+              <!-- 무속 풀이 — 코너 메뉴와 같은 창(GlossaryPanel)을 연다. 풀어 둔 말·새 말의 수를 곁에 적는다. -->
+              <section class="mudang-record mudang-glossary">
+                <h4 class="mudang-tokens-label" data-i18n="mudang.glossary.label">무속 풀이</h4>
+                <p id="mudang-glossary-tally" class="mudang-knot"></p>
+                <button type="button" class="menu-primary-button mudang-glossary-button" data-open-glossary data-i18n="mudang.glossary.open">무속 풀이 펼치기</button>
+              </section>
             </div>
           </section>
 
           <!-- 길그림 — 다닌 길의 지도. 여기서 이동하지는 않는다(이동은 성황당 노정기). -->
           <section class="menu-panel hidden" data-menu-panel="atlas">
-            <div class="menu-section-heading"><div><span data-i18n="atlas.kicker">路 圖</span><h3 data-i18n="atlas.title">길그림</h3></div><b id="atlas-here">서낭당 고개</b></div>
+            <!-- 창 제목이 이미 「길그림」이다 — 이 머리는 제목을 되풀이하지 않고 지금 선 자리를 든다. -->
+            <div class="menu-section-heading atlas-heading"><div><span data-i18n="atlas.here">지금 선 곳</span><h3 id="atlas-here">서낭당 고개</h3></div></div>
             <p class="panel-intro" data-i18n="atlas.intro">밟은 길은 또렷하고, 들은 길은 흐리고, 아직 모르는 길은 물음표로 남는다. 붉은 길은 거리와 거리를 잇는 봉인문 길이고, 부적이 붙은 길목은 징표를 다 꿰어야 열린다. 거리 사이의 이동은 성황당의 「노정기」가 맡는다.</p>
             <div id="atlas-world" class="atlas-world-frame" role="group" aria-label="다섯 거리의 길그림" data-i18n-aria="atlas.map.aria"></div>
             <p class="atlas-summary-label" data-i18n="atlas.summary.label">거리 요약</p>
@@ -283,7 +309,7 @@
           </section>
 
           <section class="menu-panel hidden" data-menu-panel="options">
-            <div class="menu-section-heading"><div><span data-i18n="options.kicker">設定</span><h3 data-i18n="options.title">설정</h3></div></div>
+            <!-- 창 제목이 「설정」이라 첫 묶음은 머리 없이 바로 선다. 조작 키 묶음만 머리를 단다. -->
             <div class="option-row">
               <div><b data-i18n="options.locale">언어 / Language</b><small data-i18n="options.locale.hint">바꾸면 굿판을 다시 차린다 — reloads the game</small></div>
               <button id="option-locale" class="menu-primary-button" type="button">한국어</button>
@@ -297,7 +323,7 @@
               <button id="option-battle-speed" class="menu-primary-button" type="button">보통</button>
             </div>
             <div class="option-row">
-              <div><b data-i18n="options.sound">소리</b><small data-i18n="options.sound.hint">방울·징·장구 장단과 효과음 (M 키로도 켜고 끈다)</small></div>
+              <div><b data-i18n="options.sound">소리</b><small id="option-sound-hint">방울·징·장구 장단과 효과음 (M 키로도 켜고 끈다)</small></div>
               <button id="option-sound" class="menu-primary-button" type="button" aria-pressed="true">켬</button>
             </div>
             <div class="option-row">
@@ -324,7 +350,7 @@
 
           <section class="menu-panel hidden" data-menu-panel="system">
             <div class="menu-section-heading"><div><span data-i18n="system.kicker">歸還</span><h3 data-i18n="system.title">여정에서 나가기</h3></div></div>
-            <div id="control-card" class="control-card" data-i18n-html="system.controls"><b>조작</b><span>이동 · 방향키 / WASD</span><span>살피기 · SPACE / ENTER / E</span><span>메뉴 · ESC</span></div>
+            <div id="control-card" class="control-card"><b>조작</b><span>이동 · 방향키·WASD</span><span>살피기 · A(ENTER·SPACE)</span><span>물리기 · B(ESC·X)</span><span>메뉴 · ESC | 소리 · M</span></div>
             <p class="panel-intro" data-i18n="system.intro">타이틀로 돌아가도 현재 여정은 유지된다. 다시 방울을 들면 저장된 자리에서 계속한다.</p>
             <button id="return-to-title" class="menu-danger-button" type="button" data-i18n="system.return">저장하고 타이틀로</button>
             <div class="menu-section-heading"><div><span data-i18n="system.fresh.kicker">初心</span><h3 data-i18n="system.fresh.title">새 여정</h3></div></div>
